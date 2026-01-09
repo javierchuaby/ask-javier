@@ -25,9 +25,15 @@ export default function Home() {
     const userMsg: ChatMessage = { role: "aiden", content: input };
     const updatedMessages = [...messages, userMsg]; // Local copy to send
     
-    setMessages(updatedMessages);
+    // Create streaming message immediately
+    const streamingMsg: ChatMessage = { role: "javier", content: "" };
+    
+    // Add both user message and empty streaming message
+    setMessages([...updatedMessages, streamingMsg]);
     setInput("");
     setIsLoading(true);
+
+    const streamingIndex = updatedMessages.length; // Index of the streaming message
 
     try {
       const response = await fetch("/api/chat", {
@@ -36,17 +42,55 @@ export default function Home() {
         body: JSON.stringify({ messages: updatedMessages }), // Send history
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      if (data.text) {
-        const javierMsg: ChatMessage = { role: "javier", content: data.text };
-        setMessages((prev) => [...prev, javierMsg]);
-      } else {
-        throw new Error("No response from Javier");
+      if (!response.body) {
+        throw new Error("No response body");
+      }
+
+      // Read the stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+
+        // Decode the chunk and append to accumulated text
+        const chunk = decoder.decode(value, { stream: true });
+        accumulatedText += chunk;
+
+        // Update the streaming message content
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          if (newMessages[streamingIndex]) {
+            newMessages[streamingIndex] = {
+              ...newMessages[streamingIndex],
+              content: accumulatedText,
+            };
+          }
+          return newMessages;
+        });
       }
     } catch (error) {
       console.error("Failed to fetch:", error);
-      setMessages((prev) => [...prev, { role: "javier", content: "I can't handle that yet—ask the real Javier." }]);
+      // Update the streaming message with error message
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        if (newMessages[streamingIndex]) {
+          newMessages[streamingIndex] = {
+            ...newMessages[streamingIndex],
+            content: "I can't handle that yet—ask the real Javier.",
+          };
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +161,9 @@ export default function Home() {
               </div>
             </div>
           ))}
-          {isLoading && <p className="text-stone-400 animate-pulse">Javier is typing...</p>}
+          {isLoading && messages.length > 0 && messages[messages.length - 1]?.content === "" && (
+            <p className="text-stone-400 animate-pulse">Javier is typing...</p>
+          )}
           <div ref={messagesEndRef} />
         </div>
 

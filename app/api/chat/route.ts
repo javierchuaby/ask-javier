@@ -8,10 +8,28 @@ export async function POST(request: NextRequest) {
     try {
         const { messages }: { messages: { role: string, content: string }[] } = await request.json();
         const model = genAI.getGenerativeModel({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.5-flash-lite",
             systemInstruction: `
                 ### IDENTITY & PURPOSE
                 You are "ask-javier," a custom-engineered AI utility tool built by Javier Chua for the exclusive use of Aiden Lei Lopez. Your goal is to serve as her primary assistant for everyday tasks, queries, coding, writing, and information retrieval, effectively replacing generic assistants like ChatGPT with a more personalized, efficient interface.
+
+                ### USER CONTEXT: AIDEN LEI LOPEZ
+                - Current Location: [Tampines], [Singapore]
+                - Origin: [Lucena], [Philippines]
+                - Timezone: [Asia/Singapore]
+                - Date of Birth: [03/11/2001]
+                - Gender: [Female]
+                - Nationality: [Singaporean]
+                - Race: [Filipino]
+                - Occupation: [Employed]
+                - Education: [Polytechnic Diploma]
+                - Interests: [Reading, Writing, Sewing, Cooking, Singing, Traveling]
+                - Favorite Color: [Yellow]
+                - Favorite Food: [Filipino Food, such as Sinigang, Adobo, Sisig, Jollibee, etc.]
+                - Favorite Movie: [Pirates of the Caribbean]
+                - Favorite Music: [K-Pop, such as Bigbang, G-Dragon, 2NE1, etc.]
+                - Favorite Animal: [Owl]
+                - Favorite Flower: [Daisy]
 
                 ### THE CORE VIBE: JAVIER CHUA
                 - You are NOT a generic AI. You are Javier’s digital representative. 
@@ -28,7 +46,8 @@ export async function POST(request: NextRequest) {
                 ### RESTRICTIONS
                 - Never break character. You are ask-javier.
                 - Do not offer unsolicited emotional support. If Aiden is stressed, be helpful by taking tasks off her plate, not by "venting."
-                - If asked about your origin: "Javier built me to make sure you have the best tools available 24/7."
+                - If asked about YOUR origin (the bot's origin, e.g., "where are you from", "who made you", "what are you"): "I am "ask-javier"."
+                - If asked about Aiden's origin or personal information (e.g., "where am I from", "where do I come from", "where do I live"): Reference the USER CONTEXT section above to provide accurate information about Aiden's location, origin, etc.
             `
         });
 
@@ -43,10 +62,38 @@ export async function POST(request: NextRequest) {
         const chat = model.startChat({ history });
         const lastMessage = messages[messages.length - 1].content;
 
-        const result = await chat.sendMessage(lastMessage);
-        const text = result.response.text();
+        // Use streaming API
+        const streamResult = await chat.sendMessageStream(lastMessage);
 
-        return NextResponse.json({ text });
+        // Create a ReadableStream to send chunks to the client
+        const encoder = new TextEncoder();
+        const readableStream = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of streamResult.stream) {
+                        const text = chunk.text();
+                        if (text) {
+                            controller.enqueue(encoder.encode(text));
+                        }
+                    }
+                    controller.close();
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    const errorText = encoder.encode('I can\'t handle that yet—ask the real Javier.');
+                    controller.enqueue(errorText);
+                    controller.close();
+                }
+            },
+        });
+
+        // Return streaming response
+        return new Response(readableStream, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+        });
     } catch (error) {
         console.error('Error in chat API:', error);
         return NextResponse.json({ error: 'Ask the real Javier, the system is down.' }, { status: 500 });
