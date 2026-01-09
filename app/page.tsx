@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 // We define what a 'Message' looks like
 interface ChatMessage {
@@ -14,38 +15,38 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const handleAskJavier = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    // 1. Add user message to the UI immediately
     const userMsg: ChatMessage = { role: "aiden", content: input };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg]; // Local copy to send
+    
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
 
     try {
-      // 2. Call your route.ts API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ messages: updatedMessages }), // Send history
       });
 
       const data = await response.json();
 
-      // 3. Add Javier's response to the UI
-      const javierMsg: ChatMessage = { role: "javier", content: data.text };
-      setMessages((prev) => [...prev, javierMsg]);
+      if (data.text) {
+        const javierMsg: ChatMessage = { role: "javier", content: data.text };
+        setMessages((prev) => [...prev, javierMsg]);
+      } else {
+        throw new Error("No response from Javier");
+      }
     } catch (error) {
       console.error("Failed to fetch:", error);
+      setMessages((prev) => [...prev, { role: "javier", content: "I can't handle that yet—ask the real Javier." }]);
     } finally {
       setIsLoading(false);
     }
@@ -74,11 +75,49 @@ export default function Home() {
                 <span className="block text-xs uppercase tracking-widest mb-1 opacity-50">
                   {msg.role === "aiden" ? "AIDEN" : "JAVIER"}
                 </span>
-                {msg.content}
+                {msg.role === "javier" ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="ml-2">{children}</li>,
+                      code: ({ className, children, ...props }) => {
+                        const isInline = !className;
+                        return isInline ? (
+                          <code className="bg-stone-100 text-stone-800 px-1 py-0.5 rounded text-sm" {...props}>
+                            {children}
+                          </code>
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      pre: ({ children }) => (
+                        <pre className="bg-stone-100 border border-stone-300 rounded p-3 overflow-x-auto mb-2">
+                          {children}
+                        </pre>
+                      ),
+                      h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h3>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-stone-300 pl-4 italic my-2">{children}</blockquote>
+                      ),
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  <span>{msg.content}</span>
+                )}
               </div>
             </div>
           ))}
-          {isLoading && <p className="text-stone-400 animate-pulse">Javier is typing gracefully...</p>}
+          {isLoading && <p className="text-stone-400 animate-pulse">Javier is typing...</p>}
           <div ref={messagesEndRef} />
         </div>
 
@@ -89,7 +128,7 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAskJavier()}
-            placeholder="Address the butler..."
+            placeholder="Type here..."
             className="flex-1 p-3 focus:outline-none text-stone-800"
           />
           <button
