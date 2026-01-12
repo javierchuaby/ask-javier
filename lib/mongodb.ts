@@ -65,7 +65,14 @@ if (typeof fetch !== 'undefined') {
 }
 // #endregion
 
-const options = {};
+const options: {
+  tls?: boolean;
+  tlsAllowInvalidCertificates?: boolean;
+  serverSelectionTimeoutMS?: number;
+} = {
+  tls: true,
+  serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;

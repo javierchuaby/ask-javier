@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import { useTheme } from "next-themes";
 
 // We define what a 'Message' looks like
 interface ChatMessage {
@@ -26,6 +27,28 @@ export default function Home() {
   const [loadingChats, setLoadingChats] = useState<boolean>(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before using theme
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // #region agent log
+  useEffect(() => {
+    const htmlClasses = typeof document !== 'undefined' ? document.documentElement.className : 'N/A';
+    const htmlElement = typeof document !== 'undefined' ? document.documentElement : null;
+    fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:30', message: 'Theme value on mount/update', data: { theme, themeType: typeof theme, isUndefined: theme === undefined, isNull: theme === null, htmlClasses, hasDarkClass: htmlClasses.includes('dark'), hasLightClass: htmlClasses.includes('light'), htmlClassList: htmlClasses.split(' ') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'D' }) }).catch(() => {});
+    // #endregion
+    // #region agent log
+    setTimeout(() => {
+      const htmlClassesAfter = typeof document !== 'undefined' ? document.documentElement.className : 'N/A';
+      fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:36', message: 'Theme value after delay', data: { theme, htmlClasses: htmlClassesAfter, hasDarkClass: htmlClassesAfter.includes('dark'), hasLightClass: htmlClassesAfter.includes('light') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'E' }) }).catch(() => {});
+    }, 200);
+    // #endregion
+  }, [theme]);
+  // #endregion
 
   // Helper function to group chats by date
   const groupChatsByDate = (chats: Chat[]) => {
@@ -266,19 +289,19 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-stone-50 font-serif">
+    <div className="flex h-screen bg-stone-50 dark:bg-stone-900 font-serif">
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-stone-200 text-stone-900 transition-all duration-300 ease-in-out ${
+        className={`bg-white dark:bg-stone-800 border-r border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 transition-all duration-300 ease-in-out ${
           isSidebarOpen ? "w-64" : "w-0"
         } overflow-hidden flex flex-col`}
       >
         <div className={`flex flex-col h-full ${isSidebarOpen ? "w-64" : "w-0"}`}>
           {/* Sidebar Header */}
-          <div className="p-3 border-b border-stone-200">
+          <div className="p-3 border-b border-stone-200 dark:border-stone-700">
             <button
               onClick={createNewChat}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-stone-100 transition-colors text-sm font-medium border border-stone-300 text-stone-800"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors text-sm font-medium border border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-200"
             >
               <span>+</span>
               <span>New Chat</span>
@@ -288,10 +311,10 @@ export default function Home() {
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto">
             {loadingChats ? (
-              <div className="p-4 text-stone-500 text-sm">Loading chats...</div>
+              <div className="p-4 text-stone-500 dark:text-stone-400 text-sm">Loading chats...</div>
             ) : chats.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <div className="mb-4 text-stone-400">
+                <div className="mb-4 text-stone-400 dark:text-stone-500">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-12 w-12"
@@ -307,11 +330,11 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <p className="text-stone-600 font-medium mb-1">No chats yet</p>
-                <p className="text-stone-400 text-sm mb-4">Start a conversation with Javier</p>
+                <p className="text-stone-600 dark:text-stone-300 font-medium mb-1">No chats yet</p>
+                <p className="text-stone-400 dark:text-stone-500 text-sm mb-4">Start a conversation with Javier</p>
                 <button
                   onClick={createNewChat}
-                  className="px-4 py-2 bg-stone-900 text-white text-sm rounded-lg hover:bg-stone-800 transition-colors"
+                  className="px-4 py-2 bg-stone-900 dark:bg-stone-700 text-white text-sm rounded-lg hover:bg-stone-800 dark:hover:bg-stone-600 transition-colors"
                 >
                   Create New Chat
                 </button>
@@ -320,7 +343,7 @@ export default function Home() {
               <div className="p-2">
                 {groupChatsByDate(chats).map((group) => (
                   <div key={group.label} className="mb-4">
-                    <div className="px-3 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">
+                    <div className="px-3 py-2 text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                       {group.label}
                     </div>
                     {group.chats.map((chat) => (
@@ -329,16 +352,16 @@ export default function Home() {
                         onClick={() => switchChat(chat._id)}
                         className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors mb-1 ${
                           currentChatId === chat._id
-                            ? "bg-stone-100"
-                            : "hover:bg-stone-50"
+                            ? "bg-stone-100 dark:bg-stone-700"
+                            : "hover:bg-stone-50 dark:hover:bg-stone-700/50"
                         }`}
                       >
-                        <span className="flex-1 text-sm truncate text-stone-800">
+                        <span className="flex-1 text-sm truncate text-stone-800 dark:text-stone-200">
                           {chat.title}
                         </span>
                         <button
                           onClick={(e) => deleteChat(chat._id, e)}
-                          className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600 transition-all p-1 rounded hover:bg-stone-200"
+                          className="opacity-0 group-hover:opacity-100 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-all p-1 rounded hover:bg-stone-200 dark:hover:bg-stone-600"
                           aria-label="Delete chat"
                         >
                           <svg
@@ -369,31 +392,81 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar with Toggle */}
-        <div className="bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
-            aria-label="Toggle sidebar"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-stone-700"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div className="bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+              aria-label="Toggle sidebar"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+            <header>
+              <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">Ask Javier</h1>
+              <p className="text-xs text-stone-600 dark:text-stone-400 italic">For Aiden Lei Lopez</p>
+            </header>
+          </div>
+          <button
+            onClick={() => {
+              // #region agent log
+              const newTheme = theme === "dark" ? "light" : "dark";
+              fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:402', message: 'Button clicked - before setTheme', data: { currentTheme: theme, newTheme, themeType: typeof theme, isUndefined: theme === undefined }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => {});
+              // #endregion
+              setTheme(newTheme);
+              // #region agent log
+              setTimeout(() => {
+                fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:407', message: 'Button clicked - after setTheme', data: { calledWith: newTheme }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => {});
+              }, 100);
+              // #endregion
+            }}
+            className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+            aria-label="Toggle theme"
+          >
+            {(!mounted || theme === "dark") ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            )}
           </button>
-          <header>
-            <h1 className="text-xl font-bold text-stone-900">Ask Javier</h1>
-            <p className="text-xs text-stone-600 italic">For Aiden Lei Lopez</p>
-          </header>
         </div>
 
         {/* Chat Content Area */}
@@ -402,7 +475,7 @@ export default function Home() {
             {/* Chat History Area */}
             <div className="space-y-6 mb-8 min-h-[300px]">
               {messages.length === 0 && !isLoading && (
-                <div className="text-center text-stone-400 py-12">
+                <div className="text-center text-stone-400 dark:text-stone-500 py-12">
                   <p>Start a conversation with Javier...</p>
                 </div>
               )}
@@ -413,8 +486,8 @@ export default function Home() {
             >
               <div className={`max-w-[80%] p-4 rounded-lg shadow-sm ${
                 msg.role === "aiden" 
-                ? "bg-stone-800 text-stone-100 rounded-br-none" 
-                : "bg-stone-50 border border-stone-200 text-stone-800 rounded-bl-none italic"
+                ? "bg-stone-800 dark:bg-stone-700 text-stone-100 rounded-br-none" 
+                : "bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 rounded-bl-none italic"
               }`}>
                 <span className="block text-xs uppercase tracking-widest mb-1 opacity-50">
                   {msg.role === "aiden" ? "AIDEN" : "JAVIER"}
@@ -429,7 +502,7 @@ export default function Home() {
                       code: ({ className, children, ...props }) => {
                         const isInline = !className;
                         return isInline ? (
-                          <code className="bg-stone-100 text-stone-800 px-1 py-0.5 rounded text-sm" {...props}>
+                          <code className="bg-stone-100 dark:bg-stone-700 text-stone-800 dark:text-stone-200 px-1 py-0.5 rounded text-sm" {...props}>
                             {children}
                           </code>
                         ) : (
@@ -439,7 +512,7 @@ export default function Home() {
                         );
                       },
                       pre: ({ children }) => (
-                        <pre className="bg-stone-100 border border-stone-300 rounded p-3 overflow-x-auto mb-2">
+                        <pre className="bg-stone-100 dark:bg-stone-700 border border-stone-300 dark:border-stone-600 rounded p-3 overflow-x-auto mb-2">
                           {children}
                         </pre>
                       ),
@@ -449,7 +522,7 @@ export default function Home() {
                       strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                       em: ({ children }) => <em className="italic">{children}</em>,
                       blockquote: ({ children }) => (
-                        <blockquote className="border-l-4 border-stone-300 pl-4 italic my-2">{children}</blockquote>
+                        <blockquote className="border-l-4 border-stone-300 dark:border-stone-600 pl-4 italic my-2">{children}</blockquote>
                       ),
                     }}
                   >
@@ -462,7 +535,7 @@ export default function Home() {
                 </div>
               ))}
               {isLoading && messages.length > 0 && messages[messages.length - 1]?.content === "" && (
-                <p className="text-stone-400 animate-pulse">Javier is typing...</p>
+                <p className="text-stone-400 dark:text-stone-500 animate-pulse">Javier is typing...</p>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -470,21 +543,21 @@ export default function Home() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white p-4">
+        <div className="bg-white dark:bg-stone-800 p-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white p-2 rounded-xl shadow-lg border border-stone-200 flex gap-2">
+            <div className="bg-white dark:bg-stone-700 p-2 rounded-xl shadow-lg border border-stone-200 dark:border-stone-600 flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAskJavier()}
                 placeholder="Type here..."
-                className="flex-1 p-3 focus:outline-none text-stone-800"
+                className="flex-1 p-3 focus:outline-none text-stone-800 dark:text-stone-200 bg-transparent placeholder:text-stone-400 dark:placeholder:text-stone-500"
               />
               <button
                 onClick={handleAskJavier}
                 disabled={isLoading}
-                className="bg-stone-900 text-white px-6 py-2 rounded-lg hover:bg-stone-700 transition-colors disabled:bg-stone-300"
+                className="bg-stone-900 dark:bg-stone-600 text-white px-6 py-2 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-500 transition-colors disabled:bg-stone-300 dark:disabled:bg-stone-700 disabled:text-stone-500 dark:disabled:text-stone-400"
               >
                 Send
               </button>
