@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
 
 export async function POST(request: NextRequest) {
     try {
-        const { messages }: { messages: { role: string, content: string }[] } = await request.json();
+        const { messages, chatId }: { messages: { role: string, content: string }[], chatId?: string } = await request.json();
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash-lite",
             systemInstruction: `
