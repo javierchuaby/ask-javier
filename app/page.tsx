@@ -31,6 +31,7 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -105,6 +106,25 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Reset height to auto to get the correct scrollHeight
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const lineHeight = 24; // Approximate line height in pixels
+      const maxHeight = lineHeight * 10; // 10 lines max
+      
+      if (scrollHeight <= maxHeight) {
+        textareaRef.current.style.height = `${Math.max(scrollHeight, 24)}px`;
+        textareaRef.current.style.overflowY = 'hidden';
+      } else {
+        textareaRef.current.style.height = `${maxHeight}px`;
+        textareaRef.current.style.overflowY = 'auto';
+      }
+    }
+  }, [input]);
 
   const loadChats = async () => {
     try {
@@ -351,7 +371,7 @@ export default function Home() {
       <aside
         className={`bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] text-[var(--sidebar-text)] transition-all duration-300 ease-in-out flex flex-col z-50
           fixed md:relative h-full
-          ${isSidebarOpen ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"}
+          ${isSidebarOpen ? "w-65 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"}
         `}
         role="complementary"
         aria-label="Chat navigation"
@@ -421,15 +441,18 @@ export default function Home() {
               {/* Profile Section */}
               <div className="flex items-start gap-2 mt-1">
                 {/* Profile Icon */}
-                <div className="flex-shrink-0" style={{ marginTop: '0.4rem', marginLeft: '0.2rem' }}>
+                <div className="flex-shrink-0" style={{ marginTop: '0.5rem', marginLeft: '0.2rem' }}>
                   <FontAwesomeIcon 
                     icon={faChildDress} 
-                    className="text-[var(--sidebar-text)]"
-                    style={{ width: '28px', height: '28px' }}
+                    className="text-[#FBBF24] dark:text-[#f7e588]"
+                    style={{ 
+                      width: '30px',
+                      height: '30px',
+                    }}
                   />
                 </div>
                 {/* Name and Username */}
-                <div className="flex flex-col mt-0.5">
+                <div className="flex flex-col mt-1">
                   <span className="text-sm font-medium text-[var(--sidebar-text)]">Aiden Lei Lopez</span>
                   <span className="text-xs text-[var(--chat-text-muted)]">@axd_lei</span>
                 </div>
@@ -486,6 +509,12 @@ export default function Home() {
               <button
                 onClick={createNewChat}
                 className="bubble-button"
+                style={{
+                  paddingTop: '0.6rem',
+                  paddingBottom: '0.6rem',
+                  paddingLeft: '1rem',
+                  paddingRight: '1rem',
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -830,13 +859,25 @@ export default function Home() {
           <div className="max-w-[var(--max-width-chat)] mx-auto">
             {/* Floating Bubble Container */}
             <div className="input-bubble">
-              {/* Input Field */}
-              <input
-                type="text"
+              {/* Input Field - Changed to textarea */}
+              <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAskJavier()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAskJavier();
+                  }
+                }}
                 placeholder="Ask anything"
+                rows={1}
+                style={{
+                  resize: 'none',
+                  overflow: 'hidden',
+                  minHeight: '24px',
+                  maxHeight: '240px', // 10 lines * 24px
+                }}
               />
               
               {/* Send Button */}

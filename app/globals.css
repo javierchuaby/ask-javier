@@ -240,11 +240,12 @@ body {
   box-shadow: var(--shadow-lg);
   padding: var(--input-padding-y) var(--input-padding-x);
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Changed from center to flex-end for textarea alignment */
   gap: var(--input-gap);
 }
 
-.input-bubble input {
+.input-bubble input,
+.input-bubble textarea {
   flex: 1;
   background: transparent;
   border: none;
@@ -252,9 +253,21 @@ body {
   color: var(--input-text) !important;
   font-size: 1rem;
   padding: 0.25rem 0.5rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
 }
 
-.input-bubble input::placeholder {
+.input-bubble textarea {
+  min-height: 24px;
+  max-height: 240px; /* 10 lines * 24px line height */
+  resize: none;
+  overflow-y: auto;
+}
+
+.input-bubble input::placeholder,
+.input-bubble textarea::placeholder {
   color: var(--input-placeholder);
 }
 
