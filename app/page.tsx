@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
 
@@ -26,6 +26,7 @@ export default function Home() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [loadingChats, setLoadingChats] = useState<boolean>(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -49,6 +50,13 @@ export default function Home() {
     // #endregion
   }, [theme]);
   // #endregion
+
+  // Filter chats by search query
+  const filteredChats = useMemo(() => {
+    if (!searchQuery.trim()) return chats;
+    const query = searchQuery.toLowerCase().trim();
+    return chats.filter((chat) => chat.title.toLowerCase().includes(query));
+  }, [chats, searchQuery]);
 
   // Helper function to group chats by date
   const groupChatsByDate = (chats: Chat[]) => {
@@ -140,6 +148,10 @@ export default function Home() {
     if (chatId === currentChatId) return;
     setCurrentChatId(chatId);
     await loadChatMessages(chatId);
+    // Close sidebar on mobile after switching
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const deleteChat = async (chatId: string, e: React.MouseEvent) => {
@@ -181,6 +193,13 @@ export default function Home() {
 
   const handleAskJavier = async () => {
     if (!input.trim() || isLoading) return;
+    
+    // Add length validation on frontend
+    const MAX_INPUT_LENGTH = 100000; // Match backend limit
+    if (input.length > MAX_INPUT_LENGTH) {
+        alert(`Message too long. Maximum length is ${MAX_INPUT_LENGTH} characters.`);
+        return;
+    }
 
     // Ensure we have a chat
     let chatId = currentChatId;
@@ -265,10 +284,23 @@ export default function Home() {
       }
 
       // Save bot message after streaming completes
-      if (accumulatedText && chatId) {
+      if (accumulatedText && accumulatedText.trim().length > 0 && chatId) {
         await saveMessage(chatId, "javier", accumulatedText);
         // Reload chats to update message count
         loadChats();
+      } else if (accumulatedText.trim().length === 0) {
+        // Handle empty response
+        console.warn('Received empty response from API');
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          if (newMessages[streamingIndex]) {
+            newMessages[streamingIndex] = {
+              ...newMessages[streamingIndex],
+              content: "I can't handle that yet—ask the real Javier.",
+            };
+          }
+          return newMessages;
+        });
       }
     } catch (error) {
       console.error("Failed to fetch:", error);
@@ -288,36 +320,201 @@ export default function Home() {
     }
   };
 
+  // Handle escape key to close sidebar on mobile
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isSidebarOpen && window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isSidebarOpen]);
+
   return (
-    <div className="flex h-screen bg-stone-50 dark:bg-stone-900 font-serif">
+    <div className="flex h-screen bg-[var(--bg-primary)]">
+      {/* Backdrop overlay for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black z-40 md:hidden transition-[var(--transition-opacity)]"
+          style={{ opacity: 'var(--opacity-backdrop)' }}
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`bg-white dark:bg-stone-800 border-r border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "w-64" : "w-0"
-        } overflow-hidden flex flex-col`}
+        className={`bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] text-[var(--sidebar-text)] transition-all duration-300 ease-in-out flex flex-col z-50
+          fixed md:relative h-full
+          ${isSidebarOpen ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"}
+        `}
+        role="complementary"
+        aria-label="Chat navigation"
       >
-        <div className={`flex flex-col h-full ${isSidebarOpen ? "w-64" : "w-0"}`}>
-          {/* Sidebar Header */}
-          <div className="p-3 border-b border-stone-200 dark:border-stone-700">
+        {/* Collapsed Sidebar - shown when sidebar is closed */}
+        {!isSidebarOpen && (
+          <div className="flex flex-col items-center py-3 gap-2 h-full">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="sidebar-button mt-1"
+              aria-label="Open sidebar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
             <button
               onClick={createNewChat}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors text-sm font-medium border border-stone-300 dark:border-stone-600 text-stone-800 dark:text-stone-200"
+              className="sidebar-button mt-2"
+              aria-label="New chat"
             >
-              <span>+</span>
-              <span>New Chat</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
             </button>
           </div>
+        )}
+
+        {/* Full Sidebar Content - shown when sidebar is open */}
+        {isSidebarOpen && (
+          <div className="flex flex-col h-full w-64">
+            {/* Profile and Toggle Button */}
+            <div className="p-[var(--spacing-sidebar-padding)] flex items-center justify-between">
+              {/* Profile Section */}
+              <div className="flex items-start gap-2 mt-1">
+                {/* Girl Icon */}
+                <div className="flex-shrink-0 mt-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8 text-[var(--sidebar-text)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                {/* Name and Username */}
+                <div className="flex flex-col mt-0.5">
+                  <span className="text-sm font-medium text-[var(--sidebar-text)]">Aiden</span>
+                  <span className="text-xs text-[var(--chat-text-muted)]">@axd_lei</span>
+                </div>
+              </div>
+              {/* Toggle Buttons */}
+              <div className="flex items-center gap-2">
+                {/* Toggle button for desktop and mobile */}
+                <button
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="sidebar-button mt-1"
+                  aria-label="Toggle sidebar"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                {/* Close button for mobile only */}
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="sidebar-button md:hidden"
+                  aria-label="Close sidebar"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Menu */}
+            <div className="px-2 pt-2 pb-2">
+              <button
+                onClick={createNewChat}
+                className="bubble-button"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+                <span>New Chat</span>
+              </button>
+            </div>
 
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto">
             {loadingChats ? (
-              <div className="p-4 text-stone-500 dark:text-stone-400 text-sm">Loading chats...</div>
-            ) : chats.length === 0 ? (
+              <div className="px-2 pb-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="px-3 py-2.5 mb-1 animate-pulse">
+                    <div className="h-4 bg-[var(--stone-200)] rounded-[var(--radius-sm)] w-3/4"></div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredChats.length === 0 && !searchQuery ? (
               <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <div className="mb-4 text-stone-400 dark:text-stone-500">
+                <div className="mb-6 text-[var(--stone-400)]">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12"
+                    className="h-16 w-16"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -330,38 +527,34 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <p className="text-stone-600 dark:text-stone-300 font-medium mb-1">No chats yet</p>
-                <p className="text-stone-400 dark:text-stone-500 text-sm mb-4">Start a conversation with Javier</p>
-                <button
-                  onClick={createNewChat}
-                  className="px-4 py-2 bg-stone-900 dark:bg-stone-700 text-white text-sm rounded-lg hover:bg-stone-800 dark:hover:bg-stone-600 transition-colors"
-                >
-                  Create New Chat
-                </button>
+                <p className="text-[var(--chat-text)] font-medium text-base mb-2">No chats yet</p>
+                <p className="text-[var(--chat-text-muted)] text-sm">Begin chatting with Javier to get started</p>
+              </div>
+            ) : filteredChats.length === 0 && searchQuery ? (
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <p className="text-[var(--chat-text-muted)] text-sm">No chats found</p>
               </div>
             ) : (
-              <div className="p-2">
-                {groupChatsByDate(chats).map((group) => (
+              <div className="px-2 pb-2">
+                {groupChatsByDate(filteredChats).map((group) => (
                   <div key={group.label} className="mb-4">
-                    <div className="px-3 py-2 text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                      {group.label}
-                    </div>
+                    {!searchQuery && (
+                      <div className="px-3 py-2 text-xs font-medium text-[var(--chat-text-muted)] uppercase tracking-wider">
+                        {group.label}
+                      </div>
+                    )}
                     {group.chats.map((chat) => (
                       <div
                         key={chat._id}
                         onClick={() => switchChat(chat._id)}
-                        className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors mb-1 ${
-                          currentChatId === chat._id
-                            ? "bg-stone-100 dark:bg-stone-700"
-                            : "hover:bg-stone-50 dark:hover:bg-stone-700/50"
+                        className={`chat-item group ${
+                          currentChatId === chat._id ? "chat-item-active" : ""
                         }`}
                       >
-                        <span className="flex-1 text-sm truncate text-stone-800 dark:text-stone-200">
-                          {chat.title}
-                        </span>
+                        <span>{chat.title}</span>
                         <button
                           onClick={(e) => deleteChat(chat._id, e)}
-                          className="opacity-0 group-hover:opacity-100 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-all p-1 rounded hover:bg-stone-200 dark:hover:bg-stone-600"
+                          className="opacity-0 group-hover:opacity-100 text-[var(--chat-text-muted)] hover:text-[var(--chat-text)] transition-[var(--transition-default)] p-1 rounded-[var(--radius-sm)] hover:bg-[var(--chat-delete-hover)]"
                           aria-label="Delete chat"
                         >
                           <svg
@@ -386,22 +579,24 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar with Toggle */}
-        <div className="bg-white dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="topbar bg-[var(--bg-primary)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            {/* Mobile menu button */}
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
-              aria-label="Toggle sidebar"
+              onClick={() => setIsSidebarOpen(true)}
+              className="sidebar-button md:hidden"
+              aria-label="Open sidebar"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)] text-[var(--chat-text)]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -415,8 +610,8 @@ export default function Home() {
               </svg>
             </button>
             <header>
-              <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">Ask Javier</h1>
-              <p className="text-xs text-stone-600 dark:text-stone-400 italic">For Aiden Lei Lopez</p>
+              <h1 className="text-xl font-bold text-[var(--chat-text)]">Ask Javier</h1>
+              <p className="text-xs text-[var(--chat-text-muted)] italic">For Aiden Lei Lopez</p>
             </header>
           </div>
           <button
@@ -432,13 +627,13 @@ export default function Home() {
               }, 100);
               // #endregion
             }}
-            className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+            className="sidebar-button"
             aria-label="Toggle theme"
           >
             {(!mounted || theme === "dark") ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)] text-[var(--chat-text)]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -453,7 +648,7 @@ export default function Home() {
             ) : (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-stone-700 dark:text-stone-300"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)] text-[var(--chat-text)]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -470,39 +665,56 @@ export default function Home() {
         </div>
 
         {/* Chat Content Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="max-w-4xl mx-auto">
+        <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col">
+          <div className={`max-w-[800px] mx-auto w-full overflow-visible ${messages.length === 0 && !isLoading ? 'flex-1 flex flex-col justify-center' : ''}`}>
             {/* Chat History Area */}
-            <div className="space-y-6 mb-8 min-h-[300px]">
+            <div className={messages.length === 0 && !isLoading ? '' : 'space-y-6 mb-8 min-h-[300px]'}>
               {messages.length === 0 && !isLoading && (
-                <div className="text-center text-stone-400 dark:text-stone-500 py-12">
+                <div className="text-center text-[var(--chat-text-muted)] py-12">
                   <p>Start a conversation with Javier...</p>
                 </div>
               )}
-              {messages.map((msg, index) => (
+              {(() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:675', message: 'Messages render - before map', data: { messagesLength: messages.length, messages: messages.map(m => ({ role: m.role, contentLength: m.content?.length || 0 })) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => {});
+                // #endregion
+                return messages.map((msg, index) => {
+                  // #region agent log
+                  fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:678', message: 'Message item render', data: { index, role: msg.role, hasContent: !!msg.content, contentLength: msg.content?.length || 0, className: `flex ${msg.role === "aiden" ? "justify-end" : "justify-start"}` }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => {});
+                  // #endregion
+                  return (
             <div 
               key={index} 
-              className={`flex ${msg.role === "aiden" ? "justify-end" : "justify-start"}`}
+              className={`flex ${msg.role === "aiden" ? "justify-end" : "justify-start"} ${msg.role === "javier" ? "w-full" : ""}`}
+              style={{ 
+                animation: `fadeIn 0.2s ease-out forwards`,
+                opacity: 0
+              }}
             >
-              <div className={`max-w-[80%] p-4 rounded-lg shadow-sm ${
+              <div className={`message-bubble ${msg.role === "aiden" ? "max-w-[var(--message-max-width)]" : "w-[800px] !max-w-none"} ${
                 msg.role === "aiden" 
-                ? "bg-stone-800 dark:bg-stone-700 text-stone-100 rounded-br-none" 
-                : "bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 rounded-bl-none italic"
-              }`}>
-                <span className="block text-xs uppercase tracking-widest mb-1 opacity-50">
-                  {msg.role === "aiden" ? "AIDEN" : "JAVIER"}
-                </span>
+                ? "bg-[var(--message-bubble-user-bg)] border border-[#f4f4f4] text-[var(--text-primary)]" 
+                : "bg-[var(--message-bubble-assistant-bg)] border border-[var(--stone-300)] text-[var(--text-primary)]"              }`}
+              >
                 {msg.role === "javier" ? (
                   <ReactMarkdown
                     components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                      li: ({ children }) => <li className="ml-2">{children}</li>,
+                      p: ({ children }) => (
+                        <p className="markdown-paragraph">{children}</p>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="markdown-list markdown-list-unordered">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="markdown-list markdown-list-ordered">{children}</ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="markdown-list-item">{children}</li>
+                      ),
                       code: ({ className, children, ...props }) => {
                         const isInline = !className;
                         return isInline ? (
-                          <code className="bg-stone-100 dark:bg-stone-700 text-stone-800 dark:text-stone-200 px-1 py-0.5 rounded text-sm" {...props}>
+                          <code className="markdown-code-inline" {...props}>
                             {children}
                           </code>
                         ) : (
@@ -512,17 +724,64 @@ export default function Home() {
                         );
                       },
                       pre: ({ children }) => (
-                        <pre className="bg-stone-100 dark:bg-stone-700 border border-stone-300 dark:border-stone-600 rounded p-3 overflow-x-auto mb-2">
+                        <pre className="markdown-code-block">
                           {children}
                         </pre>
                       ),
-                      h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h3>,
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      em: ({ children }) => <em className="italic">{children}</em>,
+                      h1: ({ children }) => (
+                        <h1 className="markdown-heading markdown-heading-1">{children}</h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="markdown-heading markdown-heading-2">{children}</h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="markdown-heading markdown-heading-3">{children}</h3>
+                      ),
+                      h4: ({ children }) => (
+                        <h4 className="markdown-heading markdown-heading-4">{children}</h4>
+                      ),
+                      h5: ({ children }) => (
+                        <h5 className="markdown-heading markdown-heading-5">{children}</h5>
+                      ),
+                      h6: ({ children }) => (
+                        <h6 className="markdown-heading markdown-heading-6">{children}</h6>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="markdown-strong">{children}</strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="markdown-em">{children}</em>
+                      ),
                       blockquote: ({ children }) => (
-                        <blockquote className="border-l-4 border-stone-300 dark:border-stone-600 pl-4 italic my-2">{children}</blockquote>
+                        <blockquote className="markdown-blockquote">{children}</blockquote>
+                      ),
+                      a: ({ href, children }) => (
+                        <a href={href} className="markdown-link" target="_blank" rel="noopener noreferrer">
+                          {children}
+                        </a>
+                      ),
+                      table: ({ children }) => (
+                        <div className="markdown-table-wrapper">
+                          <table className="markdown-table">{children}</table>
+                        </div>
+                      ),
+                      thead: ({ children }) => (
+                        <thead className="markdown-table-head">{children}</thead>
+                      ),
+                      tbody: ({ children }) => (
+                        <tbody className="markdown-table-body">{children}</tbody>
+                      ),
+                      tr: ({ children }) => (
+                        <tr className="markdown-table-row">{children}</tr>
+                      ),
+                      th: ({ children }) => (
+                        <th className="markdown-table-header">{children}</th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="markdown-table-cell">{children}</td>
+                      ),
+                      hr: () => (
+                        <hr className="markdown-hr" />
                       ),
                     }}
                   >
@@ -533,9 +792,11 @@ export default function Home() {
                 )}
               </div>
                 </div>
-              ))}
+                  );
+                });
+              })()}
               {isLoading && messages.length > 0 && messages[messages.length - 1]?.content === "" && (
-                <p className="text-stone-400 dark:text-stone-500 animate-pulse">Javier is typing...</p>
+                <p className="text-[var(--chat-text-muted)] animate-pulse">Javier is typing...</p>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -543,23 +804,39 @@ export default function Home() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white dark:bg-stone-800 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-stone-700 p-2 rounded-xl shadow-lg border border-stone-200 dark:border-stone-600 flex gap-2">
+        <div className="bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)]">
+          <div className="max-w-[var(--max-width-chat)] mx-auto">
+            {/* Floating Bubble Container */}
+            <div className="input-bubble">
+              {/* Input Field */}
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAskJavier()}
-                placeholder="Type here..."
-                className="flex-1 p-3 focus:outline-none text-stone-800 dark:text-stone-200 bg-transparent placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                placeholder="Ask anything"
               />
+              
+              {/* Send Button */}
               <button
                 onClick={handleAskJavier}
-                disabled={isLoading}
-                className="bg-stone-900 dark:bg-stone-600 text-white px-6 py-2 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-500 transition-colors disabled:bg-stone-300 dark:disabled:bg-stone-700 disabled:text-stone-500 dark:disabled:text-stone-400"
+                disabled={isLoading || !input.trim()}
+                aria-label="Send message"
               >
-                Send
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="var(--input-button-color)"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 10l7-7m0 0l7 7m-7-7v18"
+                  />
+                </svg>
               </button>
             </div>
           </div>

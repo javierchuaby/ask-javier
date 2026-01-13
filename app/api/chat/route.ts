@@ -7,6 +7,32 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
 export async function POST(request: NextRequest) {
     try {
         const { messages, chatId }: { messages: { role: string, content: string }[], chatId?: string } = await request.json();
+        
+        // Validate input
+        if (!messages || messages.length === 0) {
+            return NextResponse.json({ error: 'No messages provided' }, { status: 400 });
+        }
+        
+        const lastMessage = messages[messages.length - 1];
+        if (!lastMessage || !lastMessage.content || !lastMessage.content.trim()) {
+            return NextResponse.json({ error: 'Empty message' }, { status: 400 });
+        }
+        
+        // Validate message length (Gemini has token limits, roughly 1 token = 4 characters)
+        // Setting a conservative limit of 100k characters (~25k tokens)
+        const MAX_MESSAGE_LENGTH = 100000;
+        if (lastMessage.content.length > MAX_MESSAGE_LENGTH) {
+            return NextResponse.json({ 
+                error: `Message too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.` 
+            }, { status: 400 });
+        }
+        
+        // Log the message length for debugging
+        console.log('Processing message:', {
+            length: lastMessage.content.length,
+            preview: lastMessage.content.substring(0, 100)
+        });
+        
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash-lite",
             systemInstruction: `
@@ -62,22 +88,32 @@ export async function POST(request: NextRequest) {
 
         // Start a chat session with history
         const chat = model.startChat({ history });
-        const lastMessage = messages[messages.length - 1].content;
 
         // Use streaming API
-        const streamResult = await chat.sendMessageStream(lastMessage);
+        const streamResult = await chat.sendMessageStream(lastMessage.content);
 
         // Create a ReadableStream to send chunks to the client
         const encoder = new TextEncoder();
+        let hasContent = false;
+        
         const readableStream = new ReadableStream({
             async start(controller) {
                 try {
                     for await (const chunk of streamResult.stream) {
                         const text = chunk.text();
                         if (text) {
+                            hasContent = true;
                             controller.enqueue(encoder.encode(text));
                         }
                     }
+                    
+                    // If no content was received, log it and send an error message
+                    if (!hasContent) {
+                        console.error('Empty response from Gemini API');
+                        const errorText = encoder.encode('I can\'t handle that yet—ask the real Javier.');
+                        controller.enqueue(errorText);
+                    }
+                    
                     controller.close();
                 } catch (error) {
                     console.error('Streaming error:', error);
