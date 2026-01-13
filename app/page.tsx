@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "next-themes";
+import { signOut } from "next-auth/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChildDress, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 // We define what a 'Message' looks like
 interface ChatMessage {
@@ -30,6 +33,7 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Ensure component is mounted before using theme
   useEffect(() => {
@@ -395,6 +399,17 @@ export default function Home() {
                 />
               </svg>
             </button>
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="sidebar-button mt-auto"
+              style={{ padding: '0.75rem 0.75rem', marginBottom: '0rem' }}
+              aria-label="Log out"
+            >
+              <FontAwesomeIcon 
+                icon={faArrowRightFromBracket} 
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+              />
+            </button>
           </div>
         )}
 
@@ -405,26 +420,17 @@ export default function Home() {
             <div className="p-[var(--spacing-sidebar-padding)] flex items-center justify-between">
               {/* Profile Section */}
               <div className="flex items-start gap-2 mt-1">
-                {/* Girl Icon */}
-                <div className="flex-shrink-0 mt-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8 text-[var(--sidebar-text)]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                {/* Profile Icon */}
+                <div className="flex-shrink-0" style={{ marginTop: '0.4rem', marginLeft: '0.2rem' }}>
+                  <FontAwesomeIcon 
+                    icon={faChildDress} 
+                    className="text-[var(--sidebar-text)]"
+                    style={{ width: '28px', height: '28px' }}
+                  />
                 </div>
                 {/* Name and Username */}
                 <div className="flex flex-col mt-0.5">
-                  <span className="text-sm font-medium text-[var(--sidebar-text)]">Aiden</span>
+                  <span className="text-sm font-medium text-[var(--sidebar-text)]">Aiden Lei Lopez</span>
                   <span className="text-xs text-[var(--chat-text-muted)]">@axd_lei</span>
                 </div>
               </div>
@@ -578,6 +584,22 @@ export default function Home() {
                 ))}
               </div>
             )}
+          </div>
+          
+          {/* Logout Button */}
+          <div className="px-2 pb-3 pt-4">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="sidebar-button w-full flex items-center gap-3"
+              style={{ padding: '0.75rem 0.75rem', marginBottom: '0rem' }}
+              aria-label="Log out"
+            >
+              <FontAwesomeIcon 
+                icon={faArrowRightFromBracket} 
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+              />
+              <span className="text-sm text-[var(--sidebar-text)]">Log out</span>
+            </button>
           </div>
           </div>
         )}
@@ -842,6 +864,49 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black z-50 transition-[var(--transition-opacity)]"
+            style={{ opacity: 'var(--opacity-backdrop)' }}
+            onClick={() => setShowLogoutModal(false)}
+            aria-hidden="true"
+          />
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-[500px] mx-4">
+              <div
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl p-10 shadow-md"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                  Log out
+                </h2>
+                <p className="text-[var(--text-secondary)] mb-6">
+                  Are you sure you want to log out?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="px-4 py-2 rounded-[var(--radius-md)] text-[var(--text-primary)] hover:bg-[var(--button-hover)] transition-[var(--transition-colors)]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => signOut()}
+                    className="px-4 py-2 rounded-[var(--radius-md)] bg-[var(--input-button-bg)] text-[var(--input-button-color)] hover:bg-[var(--input-button-hover)] transition-[var(--transition-colors)]"
+                  >
+                    Log out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

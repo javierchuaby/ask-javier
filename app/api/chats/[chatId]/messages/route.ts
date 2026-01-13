@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { getToken } from 'next-auth/jwt';
 
 // POST /api/chats/[chatId]/messages - Add a message to a chat
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { chatId } = await params;
     const { role, content } = await request.json();

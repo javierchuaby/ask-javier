@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { getToken } from 'next-auth/jwt';
 
 // POST /api/chats - Create a new chat
 export async function POST(request: NextRequest) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { title } = await request.json();
     const db = await getDb();
@@ -32,7 +43,17 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/chats - Get all chats
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const db = await getDb();
     const chatsCollection = db.collection('chats');

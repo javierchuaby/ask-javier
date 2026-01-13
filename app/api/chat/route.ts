@@ -1,10 +1,21 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse, NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 // Define the Google API key
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
 
 export async function POST(request: NextRequest) {
+    // Check authentication
+    const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         const { messages, chatId }: { messages: { role: string, content: string }[], chatId?: string } = await request.json();
         

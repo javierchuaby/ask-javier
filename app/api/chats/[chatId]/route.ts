@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { getToken } from 'next-auth/jwt';
 
 // GET /api/chats/[chatId] - Get chat with messages
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { chatId } = await params;
     
@@ -69,6 +80,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { chatId } = await params;
     
@@ -112,6 +133,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  // Check authentication
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { chatId } = await params;
     const { title } = await request.json();
