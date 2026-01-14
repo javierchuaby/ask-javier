@@ -564,7 +564,7 @@ export default function Home() {
                 <div className="flex-shrink-0" style={{ marginTop: '0.5rem', marginLeft: '0.2rem' }}>
                   <FontAwesomeIcon 
                     icon={faChildDress} 
-                    className="text-[#FBBF24] dark:text-[#f7e588]"
+                    className="text-[#FBBF24] dark:text-[#fed11d]"
                     style={{ 
                       width: '30px',
                       height: '30px',
