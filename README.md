@@ -27,27 +27,6 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ALLOWED_EMAILS=email1@gmail.com,email2@gmail.com
 ```
 
-#### Environment Variable Details
-
-- **GOOGLE_GENAI_API_KEY**: Your Google Generative AI API key. Get it from [Google AI Studio](https://makersuite.google.com/app/apikey).
-- **MONGODB_URI**: Your MongoDB Atlas connection string. Format: `mongodb+srv://username:password@cluster.mongodb.net/ask-javier?retryWrites=true&w=majority`
-- **NEXTAUTH_URL**: The base URL of your application. Use `http://localhost:3000` for development, or your production URL (e.g., `https://your-app.vercel.app`) for production.
-- **NEXTAUTH_SECRET**: A random secret key for encrypting session tokens. Generate one using: `openssl rand -base64 32`
-- **GOOGLE_CLIENT_ID** and **GOOGLE_CLIENT_SECRET**: OAuth credentials from Google Cloud Console (see setup instructions below).
-- **ALLOWED_EMAILS**: Comma-separated list of email addresses that are allowed to access the app. Only these emails will be able to sign in.
-
-### Setting Up Google OAuth
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the **Google+ API** (or **Google Identity Services API**)
-4. Go to **Credentials** → **Create Credentials** → **OAuth client ID**
-5. Choose **Web application** as the application type
-6. Add authorized redirect URIs:
-   - For development: `http://localhost:3000/api/auth/callback/google`
-   - For production: `https://your-domain.vercel.app/api/auth/callback/google`
-7. Copy the **Client ID** and **Client Secret** to your `.env.local` file
-
 ### Running the Development Server
 
 ```bash
