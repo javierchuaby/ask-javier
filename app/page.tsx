@@ -31,7 +31,7 @@ export default function Home() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [loadingChats, setLoadingChats] = useState<boolean>(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, _setSearchQuery] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme, setTheme } = useTheme();
@@ -43,21 +43,6 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // #region agent log
-  useEffect(() => {
-    const htmlClasses = typeof document !== 'undefined' ? document.documentElement.className : 'N/A';
-    const htmlElement = typeof document !== 'undefined' ? document.documentElement : null;
-    fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:30', message: 'Theme value on mount/update', data: { theme, themeType: typeof theme, isUndefined: theme === undefined, isNull: theme === null, htmlClasses, hasDarkClass: htmlClasses.includes('dark'), hasLightClass: htmlClasses.includes('light'), htmlClassList: htmlClasses.split(' ') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'D' }) }).catch(() => {});
-    // #endregion
-    // #region agent log
-    setTimeout(() => {
-      const htmlClassesAfter = typeof document !== 'undefined' ? document.documentElement.className : 'N/A';
-      fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:36', message: 'Theme value after delay', data: { theme, htmlClasses: htmlClassesAfter, hasDarkClass: htmlClassesAfter.includes('dark'), hasLightClass: htmlClassesAfter.includes('light') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'E' }) }).catch(() => {});
-    }, 200);
-    // #endregion
-  }, [theme]);
-  // #endregion
 
   // Filter chats by search query
   const filteredChats = useMemo(() => {
@@ -103,6 +88,7 @@ export default function Home() {
   // Load chats on mount
   useEffect(() => {
     loadChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-scroll when messages change
@@ -141,8 +127,7 @@ export default function Home() {
           loadChatMessages(data[0]._id);
         }
       }
-    } catch (error) {
-      console.error("Failed to load chats:", error);
+    } catch {
       // Error is already handled by authenticatedFetch (redirects on 401)
     } finally {
       setLoadingChats(false);
@@ -228,7 +213,7 @@ export default function Home() {
       const response = await authenticatedFetch(`/api/chats/${chatId}`);
       if (response.ok) {
         const data = await response.json();
-        const formattedMessages: ChatMessage[] = data.messages.map((msg: any) => ({
+        const formattedMessages: ChatMessage[] = data.messages.map((msg: { role: "aiden" | "javier"; content: string }) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -236,8 +221,7 @@ export default function Home() {
         // Store in cache
         chatCache.set(chatId, formattedMessages);
       }
-    } catch (error) {
-      console.error("Failed to load chat messages:", error);
+    } catch {
       // Error is already handled by authenticatedFetch (redirects on 401)
     }
   };
@@ -290,8 +274,7 @@ export default function Home() {
           }
         }
       }
-    } catch (error) {
-      console.error("Failed to delete chat:", error);
+    } catch {
       // Error is already handled by authenticatedFetch (redirects on 401)
     }
   };
@@ -304,8 +287,7 @@ export default function Home() {
         body: JSON.stringify({ role, content }),
       });
       return response.ok;
-    } catch (error) {
-      console.error("Failed to save message:", error);
+    } catch {
       // Error is already handled by authenticatedFetch (redirects on 401)
       return false;
     }
@@ -337,11 +319,9 @@ export default function Home() {
           setCurrentChatId(chatId);
           setChats((prev) => [newChat, ...prev]);
         } else {
-          console.error("Failed to create chat");
           return;
         }
-      } catch (error) {
-        console.error("Failed to create chat:", error);
+      } catch {
         // Error is already handled by authenticatedFetch (redirects on 401)
         return;
       }
@@ -427,14 +407,12 @@ export default function Home() {
         if (!saveSuccess) {
           // Rollback the optimistic update
           rollbackChatUpdate(chatId, previousMessageCount, previousUpdatedAt);
-          console.error("Failed to save bot message, rolled back optimistic update");
         } else {
           // Invalidate cache only on success
           chatCache.invalidate(chatId);
         }
       } else if (accumulatedText.trim().length === 0) {
         // Handle empty response
-        console.warn('Received empty response from API');
         setMessages((prev) => {
           const newMessages = [...prev];
           if (newMessages[streamingIndex]) {
@@ -446,8 +424,7 @@ export default function Home() {
           return newMessages;
         });
       }
-    } catch (error) {
-      console.error("Failed to fetch:", error);
+    } catch {
       // Update the streaming message with error message
       setMessages((prev) => {
         const newMessages = [...prev];
@@ -786,18 +763,7 @@ export default function Home() {
             </header>
           </div>
           <button
-            onClick={() => {
-              // #region agent log
-              const newTheme = theme === "dark" ? "light" : "dark";
-              fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:402', message: 'Button clicked - before setTheme', data: { currentTheme: theme, newTheme, themeType: typeof theme, isUndefined: theme === undefined }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => {});
-              // #endregion
-              setTheme(newTheme);
-              // #region agent log
-              setTimeout(() => {
-                fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:407', message: 'Button clicked - after setTheme', data: { calledWith: newTheme }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => {});
-              }, 100);
-              // #endregion
-            }}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="sidebar-button"
             aria-label="Toggle theme"
           >
@@ -845,15 +811,7 @@ export default function Home() {
                   <p>Start a conversation with Javier...</p>
                 </div>
               )}
-              {(() => {
-                // #region agent log
-                fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:675', message: 'Messages render - before map', data: { messagesLength: messages.length, messages: messages.map(m => ({ role: m.role, contentLength: m.content?.length || 0 })) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => {});
-                // #endregion
-                return messages.map((msg, index) => {
-                  // #region agent log
-                  fetch('http://127.0.0.1:7243/ingest/31fd7dde-0c45-4b36-b17b-4dbe8e4310c4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'page.tsx:678', message: 'Message item render', data: { index, role: msg.role, hasContent: !!msg.content, contentLength: msg.content?.length || 0, className: `flex ${msg.role === "aiden" ? "justify-end" : "justify-start"}` }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => {});
-                  // #endregion
-                  return (
+              {messages.map((msg, index) => (
             <div 
               key={index} 
               className={`flex ${msg.role === "aiden" ? "justify-end" : "justify-start"} ${msg.role === "javier" ? "w-full" : ""}`}
@@ -963,9 +921,7 @@ export default function Home() {
                 )}
               </div>
                 </div>
-                  );
-                });
-              })()}
+              ))}
               {isLoading && messages.length > 0 && messages[messages.length - 1]?.content === "" && (
                 <p className="text-[var(--chat-text-muted)] animate-pulse">Javier is typing...</p>
               )}

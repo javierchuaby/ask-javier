@@ -2,9 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function SignIn() {
+// Prevent static generation - useSearchParams requires runtime URL access
+export const dynamic = 'force-dynamic';
+
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [isLoading, setIsLoading] = useState(false);
@@ -13,15 +16,13 @@ export default function SignIn() {
     setIsLoading(true);
     try {
       await signIn("google", { callbackUrl });
-    } catch (error) {
-      console.error("Sign in error:", error);
+    } catch {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#181818] dark:via-[#181818] dark:to-[#212121]">
-      <div className="w-full max-w-[500px] mx-4">
+    <div className="w-full max-w-[500px] mx-4">
         <div className="bg-white dark:bg-[#212121] border border-gray-200 dark:border-[#303030] rounded-3xl p-10 shadow-xl shadow-black/10 dark:shadow-xl dark:shadow-black/20">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-[#ffffff] mb-3">
@@ -97,6 +98,15 @@ export default function SignIn() {
           </button>
         </div>
       </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#181818] dark:via-[#181818] dark:to-[#212121]">
+      <Suspense fallback={<div className="w-full max-w-[500px] mx-4 text-center text-gray-600 dark:text-[#ffffff]/70">Loading...</div>}>
+        <SignInContent />
+      </Suspense>
     </div>
   );
 }

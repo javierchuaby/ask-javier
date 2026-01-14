@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
 import { getToken } from 'next-auth/jwt';
 
 // POST /api/chats - Create a new chat
@@ -33,8 +32,7 @@ export async function POST(request: NextRequest) {
       _id: result.insertedId.toString(),
       ...newChat,
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating chat:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create chat' },
       { status: 500 }
@@ -72,8 +70,7 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json(chatsWithId);
-  } catch (error) {
-    console.error('Error fetching chats:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch chats' },
       { status: 500 }

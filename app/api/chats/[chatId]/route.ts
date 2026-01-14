@@ -66,8 +66,7 @@ export async function GET(
       messageCount: chat.messageCount || 0,
       messages: messagesWithId,
     });
-  } catch (error) {
-    console.error('Error fetching chat:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch chat' },
       { status: 500 }
@@ -119,8 +118,7 @@ export async function DELETE(
     await messagesCollection.deleteMany({ chatId: objectId });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting chat:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete chat' },
       { status: 500 }
@@ -182,8 +180,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error updating chat:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to update chat' },
       { status: 500 }

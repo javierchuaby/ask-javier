@@ -25,8 +25,7 @@ async function generateChatTitle(firstMessage: string, chatId: string): Promise<
     const rateLimitResult = await checkRateLimit(modelName, RATE_LIMITS[modelName]);
     
     if (!rateLimitResult.allowed) {
-      // Rate limit exceeded - log and return early (keep truncated title)
-      console.log(`Rate limit exceeded for ${modelName} when generating chat title. Keeping truncated title.`);
+      // Rate limit exceeded - return early (keep truncated title)
       return;
     }
 
@@ -57,9 +56,8 @@ async function generateChatTitle(firstMessage: string, chatId: string): Promise<
         { $set: { title: cleanTitle } }
       );
     }
-  } catch (error) {
-    // Log error but don't throw - we'll keep the truncated title
-    console.error('Error generating chat title:', error);
+  } catch {
+    // Error but don't throw - we'll keep the truncated title
   }
 }
 
@@ -152,9 +150,7 @@ export async function POST(
       );
 
       // Generate and update title asynchronously (fire and forget)
-      generateChatTitle(content, chatId).catch((error) => {
-        console.error('Failed to generate chat title:', error);
-      });
+      generateChatTitle(content, chatId).catch(() => {});
     }
 
     return NextResponse.json({
@@ -162,8 +158,7 @@ export async function POST(
       ...newMessage,
       chatId: chatId,
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error saving message:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to save message' },
       { status: 500 }

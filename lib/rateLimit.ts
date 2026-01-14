@@ -21,6 +21,17 @@ export interface RateLimitResult {
   reason?: 'perMinute' | 'perDay';
 }
 
+interface RateLimitRequest {
+  timestamp: Date | string;
+}
+
+interface RateLimitDocument {
+  model: string;
+  requests: RateLimitRequest[];
+  dailyCount: number;
+  lastResetDate: string;
+}
+
 /**
  * Check if a request is allowed based on rate limits
  * @param model - The Gemini model name
@@ -39,7 +50,7 @@ export async function checkRateLimit(
     try {
       await rateLimitsCollection.createIndex({ model: 1 }, { unique: true });
       indexesInitialized = true;
-    } catch (error) {
+    } catch {
       // Index might already exist, ignore error
       indexesInitialized = true;
     }
@@ -67,11 +78,11 @@ export async function checkRateLimit(
     }
   );
 
-  let rateLimitDoc: any = result;
+  let rateLimitDoc = result as RateLimitDocument | null;
   if (!rateLimitDoc) {
     // If still null after upsert, fetch it
-    rateLimitDoc = await rateLimitsCollection.findOne({ model });
-    if (!rateLimitDoc) {
+    const fetchedDoc = await rateLimitsCollection.findOne({ model });
+    if (!fetchedDoc) {
       // Create a default document structure
       rateLimitDoc = {
         model,
@@ -79,6 +90,8 @@ export async function checkRateLimit(
         dailyCount: 0,
         lastResetDate: todayString,
       };
+    } else {
+      rateLimitDoc = fetchedDoc as unknown as RateLimitDocument;
     }
   }
 
@@ -104,7 +117,7 @@ export async function checkRateLimit(
 
   // Clean up old requests (older than 1 minute) for per-minute tracking
   const recentRequests = (rateLimitDoc.requests || []).filter(
-    (req: any) => {
+    (req: RateLimitRequest) => {
       const reqTime = new Date(req.timestamp);
       return reqTime >= oneMinuteAgo;
     }
@@ -115,7 +128,7 @@ export async function checkRateLimit(
     // Calculate retry after time (seconds until oldest request expires)
     // Find the oldest request timestamp
     const oldestTime = Math.min(
-      ...recentRequests.map((req: any) => new Date(req.timestamp).getTime())
+      ...recentRequests.map((req: RateLimitRequest) => new Date(req.timestamp).getTime())
     );
     const retryAfter = Math.ceil(
       (oldestTime + 60 * 1000 - now.getTime()) / 1000
@@ -157,14 +170,12 @@ export async function recordRequest(model: string): Promise<void> {
   const todayString = now.toISOString().split('T')[0];
 
   // Update rate limit document
+  const newRequest: RateLimitRequest = { timestamp: now };
   await rateLimitsCollection.updateOne(
     { model },
     {
-      $push: {
-        requests: {
-          timestamp: now,
-        } as any,
-      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      $push: { requests: newRequest } as any,
       $inc: {
         dailyCount: 1,
       },
@@ -176,11 +187,11 @@ export async function recordRequest(model: string): Promise<void> {
   );
 
   // Clean up old requests periodically (keep only last 100 to avoid document bloat)
-  const rateLimitDoc: any = await rateLimitsCollection.findOne({ model });
+  const rateLimitDoc = await rateLimitsCollection.findOne({ model }) as RateLimitDocument | null;
   if (rateLimitDoc && rateLimitDoc.requests && rateLimitDoc.requests.length > 100) {
     const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
     const recentRequests = rateLimitDoc.requests.filter(
-      (req: any) => {
+      (req: RateLimitRequest) => {
         const reqTime = new Date(req.timestamp);
         return reqTime >= oneMinuteAgo;
       }

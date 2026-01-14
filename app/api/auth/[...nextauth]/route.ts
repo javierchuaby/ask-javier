@@ -15,19 +15,18 @@ const authOptions: NextAuthConfig = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
+  trustHost: true,
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account: _account, profile: _profile }) {
       // Check if user's email is in the whitelist
       if (user.email) {
         const emailLower = user.email.toLowerCase();
         const isAllowed = ALLOWED_EMAILS.includes(emailLower);
 
         if (!isAllowed) {
-          console.log(`Access denied for email: ${user.email}`);
           return false; // Deny sign in
         }
 
-        console.log(`Access granted for email: ${user.email}`);
         return true; // Allow sign in
       }
 

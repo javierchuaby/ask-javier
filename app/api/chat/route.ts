@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const { messages, chatId }: { messages: { role: string, content: string }[], chatId?: string } = await request.json();
+        const { messages, chatId: _chatId }: { messages: { role: string, content: string }[], chatId?: string } = await request.json();
         
         // Validate input
         if (!messages || messages.length === 0) {
@@ -143,12 +143,6 @@ export async function POST(request: NextRequest) {
                 error: `Message too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.` 
             }, { status: 400 });
         }
-        
-        // Log the message length for debugging
-        console.log('Processing message:', {
-            length: lastMessage.content.length,
-            preview: lastMessage.content.substring(0, 100)
-        });
         
         // Detect affection in the last user message
         const detectedAffection = detectAffection(lastMessage.content);
@@ -266,16 +260,14 @@ export async function POST(request: NextRequest) {
                         }
                     }
                     
-                    // If no content was received, log it and send an error message
+                    // If no content was received, send an error message
                     if (!hasContent) {
-                        console.error('Empty response from Gemini API');
                         const errorText = encoder.encode('I can\'t handle that yet—ask the real Javier.');
                         controller.enqueue(errorText);
                     }
                     
                     controller.close();
-                } catch (error) {
-                    console.error('Streaming error:', error);
+                } catch {
                     const errorText = encoder.encode('I can\'t handle that yet—ask the real Javier.');
                     controller.enqueue(errorText);
                     controller.close();
@@ -291,8 +283,7 @@ export async function POST(request: NextRequest) {
                 'Connection': 'keep-alive',
             },
         });
-    } catch (error) {
-        console.error('Error in chat API:', error);
+    } catch {
         return NextResponse.json({ error: 'Ask the real Javier, the system is down.' }, { status: 500 });
     }
 }
