@@ -3,6 +3,7 @@ import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { getToken } from 'next-auth/jwt';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkRateLimit, recordRequest, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
@@ -19,8 +20,22 @@ async function generateChatTitle(firstMessage: string, chatId: string): Promise<
     const chatsCollection = db.collection('chats');
     const objectId = new ObjectId(chatId);
 
+    // Check rate limit before making API call
+    const modelName = 'gemini-3-flash';
+    const rateLimitResult = await checkRateLimit(modelName, RATE_LIMITS[modelName]);
+    
+    if (!rateLimitResult.allowed) {
+      // Rate limit exceeded - log and return early (keep truncated title)
+      console.log(`Rate limit exceeded for ${modelName} when generating chat title. Keeping truncated title.`);
+      return;
+    }
+
+    // Record the request IMMEDIATELY after check passes, before API call
+    // This prevents race conditions where multiple requests pass the check simultaneously
+    await recordRequest(modelName);
+
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: modelName,
       systemInstruction: `You are a title generator. Generate a concise, descriptive title (3-5 words, maximum 50 characters) that captures the main topic or essence of the user's query. Return only the title text - no quotes, no explanations, no additional text. Make it specific and meaningful, avoiding generic phrases.`,
     });
 
