@@ -16,22 +16,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Debug: Log what cookies the browser is actually sending
-  // This will show up in your Vercel Logs
-  const allCookies = request.cookies.getAll();
-  console.log("Middleware checking path:", pathname);
-  console.log("Cookies found:", allCookies.map(c => c.name));
-
-  // 3. Try to get the token
+  // 2. FORCE check for the cookie name seen in your screenshot
+  // We check specifically for the Auth.js v5 name
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    salt: "__Secure-authjs.session-token", // Explicitly look for the v5 secure cookie
   });
   
-  console.log("Token found:", !!token);
+  // 3. Fallback: If not found, try the non-secure version (just in case)
+  // This helps if you switch between dev/prod often
+  const fallbackToken = token || await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+    salt: "authjs.session-token",
+  });
+
+  const finalToken = token || fallbackToken;
+
+  console.log(`Middleware: Path: ${pathname}, Token found: ${!!finalToken}`);
 
   // 4. Protect all other routes
-  if (!token) {
+  if (!finalToken) {
     const signInUrl = new URL("/auth/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
