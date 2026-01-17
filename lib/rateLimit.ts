@@ -9,6 +9,10 @@ export const RATE_LIMITS = {
     perMinute: 9,
     perDay: 19,
   },
+  'gemini-2.5-flash': {
+    perMinute: 4,
+    perDay: 19,
+  },
   'gemini-3-flash': {
     perMinute: 4,
     perDay: 19,

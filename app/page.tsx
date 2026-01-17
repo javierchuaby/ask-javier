@@ -321,13 +321,6 @@ export default function Home() {
     const userMsg: ChatMessage = { role: "aiden", content: input };
     const updatedMessages = [...messages, userMsg];
 
-    // Save user message to database
-    if (chatId) {
-      await saveMessage(chatId, "aiden", input);
-      // Invalidate cache after saving user message
-      chatCache.invalidate(chatId);
-    }
-
     // Create streaming message immediately
     const streamingMsg: ChatMessage = { role: "javier", content: "" };
 
@@ -382,27 +375,13 @@ export default function Home() {
         });
       }
 
-      // Save bot message after streaming completes
-      if (accumulatedText && accumulatedText.trim().length > 0 && chatId) {
-        // Store previous state for rollback
-        const chat = chats.find((c) => c._id === chatId);
-        const previousMessageCount = chat?.messageCount ?? 0;
-        const previousUpdatedAt = chat?.updatedAt ?? new Date().toISOString();
-
-        // Optimistically update first
+      // Invalidate cache to refresh chat list and message count
+      if (chatId) {
+        chatCache.invalidate(chatId);
         updateChatInList(chatId, { messageCountIncrement: 2 });
+      }
 
-        // Try to save bot message
-        const saveSuccess = await saveMessage(chatId, "javier", accumulatedText);
-
-        if (!saveSuccess) {
-          // Rollback the optimistic update
-          rollbackChatUpdate(chatId, previousMessageCount, previousUpdatedAt);
-        } else {
-          // Invalidate cache only on success
-          chatCache.invalidate(chatId);
-        }
-      } else if (accumulatedText.trim().length === 0) {
+      if (accumulatedText.trim().length === 0) {
         // Handle empty response
         setMessages((prev) => {
           const newMessages = [...prev];

@@ -11,7 +11,7 @@ const cookieName = isProduction
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Skip auth routes and static assets
+  // Skip auth routes and static assets
   if (
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/auth") ||
@@ -22,17 +22,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Check for token using the configured cookie name
+  // Check for token using the configured cookie name
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
     cookieName: cookieName,
   });
 
-  // 3. Debugging Log 
-  console.log(`Middleware: Path: ${pathname}, Token found: ${!!token}`);
-
-  // 4. Protect all other routes
+  // Protect all other routes
   if (!token) {
     const signInUrl = new URL("/auth/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);

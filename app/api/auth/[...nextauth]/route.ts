@@ -19,8 +19,6 @@ const authOptions: NextAuthConfig = {
     }),
   ],
   trustHost: true,
-  // Force the cookie name to be "next-auth" (What the client expects)
-  // This overrides the "authjs" default that is causing the mismatch
   cookies: {
     sessionToken: {
       name: isProduction ? "__Secure-next-auth.session-token" : "next-auth.session-token",
@@ -29,6 +27,10 @@ const authOptions: NextAuthConfig = {
         sameSite: "lax",
         path: "/",
         secure: isProduction,
+        // Note: Cookies are domain-specific by design for security
+        // Preview deployments (e.g., ask-javier-abc123.vercel.app) are separate domains
+        // Users will need to sign in separately on each preview URL, which is expected behavior
+        // The trustHost: true setting above handles dynamic host detection properly
       },
     },
   },
