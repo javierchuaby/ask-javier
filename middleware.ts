@@ -3,14 +3,9 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
   const { pathname } = request.nextUrl;
 
-  // Allow access to auth routes and public assets
+  // 1. Allow access to auth routes and public assets
   if (
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/auth") ||
@@ -21,7 +16,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect all other routes
+  // 2. Debug: Log what cookies the browser is actually sending
+  // This will show up in your Vercel Logs
+  const allCookies = request.cookies.getAll();
+  console.log("Middleware checking path:", pathname);
+  console.log("Cookies found:", allCookies.map(c => c.name));
+
+  // 3. Try to get the token
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  
+  console.log("Token found:", !!token);
+
+  // 4. Protect all other routes
   if (!token) {
     const signInUrl = new URL("/auth/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
@@ -33,13 +42,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
