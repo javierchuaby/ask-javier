@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { getToken } from 'next-auth/jwt';
 
+// Determine cookie name based on environment (matches NextAuth config)
+const isProduction = process.env.NODE_ENV === "production";
+const cookieName = isProduction 
+  ? "__Secure-next-auth.session-token" 
+  : "next-auth.session-token";
+
 // POST /api/chats - Create a new chat
 export async function POST(request: NextRequest) {
   // Check authentication
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {
@@ -46,6 +53,7 @@ export async function GET(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {

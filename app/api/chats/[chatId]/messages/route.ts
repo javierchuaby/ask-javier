@@ -5,6 +5,12 @@ import { getToken } from 'next-auth/jwt';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkRateLimit, recordRequest, RATE_LIMITS } from '@/lib/rateLimit';
 
+// Determine cookie name based on environment (matches NextAuth config)
+const isProduction = process.env.NODE_ENV === "production";
+const cookieName = isProduction 
+  ? "__Secure-next-auth.session-token" 
+  : "next-auth.session-token";
+
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
 
@@ -70,6 +76,7 @@ export async function POST(
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {

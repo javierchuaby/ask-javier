@@ -3,6 +3,12 @@ import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { getToken } from 'next-auth/jwt';
 
+// Determine cookie name based on environment (matches NextAuth config)
+const isProduction = process.env.NODE_ENV === "production";
+const cookieName = isProduction 
+  ? "__Secure-next-auth.session-token" 
+  : "next-auth.session-token";
+
 // GET /api/chats/[chatId] - Get chat with messages
 export async function GET(
   request: NextRequest,
@@ -12,6 +18,7 @@ export async function GET(
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {
@@ -83,6 +90,7 @@ export async function DELETE(
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {
@@ -135,6 +143,7 @@ export async function PATCH(
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: cookieName,
   });
 
   if (!token) {

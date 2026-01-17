@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+// Determine cookie name based on environment (matches NextAuth config)
+const isProduction = process.env.NODE_ENV === "production";
+const cookieName = isProduction 
+  ? "__Secure-next-auth.session-token" 
+  : "next-auth.session-token";
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -16,26 +22,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. FORCE check for the cookie name seen in your screenshot
-  // We use 'cookieName' (v4 parameter) instead of 'salt'
+  // 2. Check for token using the configured cookie name
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
-    cookieName: "__Secure-authjs.session-token", 
+    cookieName: cookieName,
   });
 
-  // 3. Fallback: If not found, try the standard name (just in case)
-  const finalToken = token || await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: "next-auth.session-token",
-  });
+  // 3. Debugging Log 
+  console.log(`Middleware: Path: ${pathname}, Token found: ${!!token}`);
 
-  // 4. Debugging Log 
-  console.log(`Middleware: Path: ${pathname}, Token found: ${!!finalToken}`);
-
-  // 5. Protect all other routes
-  if (!finalToken) {
+  // 4. Protect all other routes
+  if (!token) {
     const signInUrl = new URL("/auth/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);

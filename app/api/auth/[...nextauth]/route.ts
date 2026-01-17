@@ -8,6 +8,9 @@ const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || "")
   .map((email) => email.trim().toLowerCase())
   .filter((email) => email.length > 0);
 
+// Determine if we are in production
+const isProduction = process.env.NODE_ENV === "production";
+
 const authOptions: NextAuthConfig = {
   providers: [
     GoogleProvider({
@@ -16,6 +19,19 @@ const authOptions: NextAuthConfig = {
     }),
   ],
   trustHost: true,
+  // Force the cookie name to be "next-auth" (What the client expects)
+  // This overrides the "authjs" default that is causing the mismatch
+  cookies: {
+    sessionToken: {
+      name: isProduction ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProduction,
+      },
+    },
+  },
   callbacks: {
     async signIn({ user, account: _account, profile: _profile }) {
       // Check if user's email is in the whitelist
