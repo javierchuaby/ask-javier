@@ -62,8 +62,20 @@ export async function checkRateLimit(
 
   const now = new Date();
   const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayString = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Use Pacific Time (UTC-8) for daily resets to match Google AI Studio
+  const pacificFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = pacificFormatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === "year")!.value);
+  const month = parseInt(parts.find(p => p.type === "month")!.value) - 1;
+  const day = parseInt(parts.find(p => p.type === "day")!.value);
+  const todayPacific = new Date(Date.UTC(year, month, day));
+  const todayString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   // Use findOneAndUpdate with atomic operations to prevent race conditions
   const result = await rateLimitsCollection.findOneAndUpdate(
@@ -147,10 +159,27 @@ export async function checkRateLimit(
 
   // Check per-day limit
   if (rateLimitDoc.dailyCount >= limits.perDay) {
-    // Calculate retry after time (seconds until midnight)
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const retryAfter = Math.ceil((tomorrow.getTime() - now.getTime()) / 1000);
+    // Calculate retry after time (seconds until midnight Pacific Time)
+    // Get current time components in Pacific timezone
+    const pacificTimeFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    
+    const pacificParts = pacificTimeFormatter.formatToParts(now);
+    const pacificHour = parseInt(pacificParts.find(p => p.type === "hour")!.value);
+    const pacificMinute = parseInt(pacificParts.find(p => p.type === "minute")!.value);
+    const pacificSecond = parseInt(pacificParts.find(p => p.type === "second")!.value);
+    
+    // Calculate seconds until next midnight Pacific Time
+    const secondsUntilMidnight = (24 * 60 * 60) - (pacificHour * 60 * 60 + pacificMinute * 60 + pacificSecond);
+    const retryAfter = Math.ceil(secondsUntilMidnight);
 
     return {
       allowed: false,
@@ -171,7 +200,18 @@ export async function recordRequest(model: string): Promise<void> {
   const rateLimitsCollection = db.collection('rateLimits');
 
   const now = new Date();
-  const todayString = now.toISOString().split('T')[0];
+  // Use Pacific Time (UTC-8) for daily resets to match Google AI Studio
+  const pacificFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = pacificFormatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === "year")!.value);
+  const month = parseInt(parts.find(p => p.type === "month")!.value) - 1;
+  const day = parseInt(parts.find(p => p.type === "day")!.value);
+  const todayString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   // Update rate limit document
   const newRequest: RateLimitRequest = { timestamp: now };
