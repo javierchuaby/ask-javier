@@ -296,8 +296,10 @@ export default function Home() {
 
     // Ensure we have a chat
     let chatId = currentChatId;
+    let isFirstMessage = false;
     if (!chatId) {
       // Create new chat if none exists
+      isFirstMessage = true;
       try {
         const response = await authenticatedFetch("/api/chats", {
           method: "POST",
@@ -316,6 +318,10 @@ export default function Home() {
         // Error is already handled by authenticatedFetch (redirects on 401)
         return;
       }
+    } else {
+      // Check if this is the first message in an existing chat
+      const currentChat = chats.find((chat) => chat._id === chatId);
+      isFirstMessage = currentChat ? currentChat.messageCount === 0 : false;
     }
 
     const userMsg: ChatMessage = { role: "aiden", content: input };
@@ -379,6 +385,41 @@ export default function Home() {
       if (chatId) {
         chatCache.invalidate(chatId);
         updateChatInList(chatId, { messageCountIncrement: 2 });
+      }
+
+      // If this is the first message, fetch updated chat title after AI generation
+      if (chatId && isFirstMessage) {
+        // Wait a bit for the title to be generated, then fetch updated chat
+        setTimeout(async () => {
+          try {
+            const response = await authenticatedFetch(`/api/chats/${chatId}`);
+            if (response.ok) {
+              const updatedChat = await response.json();
+              setChats((prevChats) => {
+                const chatIndex = prevChats.findIndex((chat) => chat._id === chatId);
+                if (chatIndex !== -1) {
+                  const newChats = [...prevChats];
+                  newChats[chatIndex] = {
+                    _id: updatedChat._id,
+                    title: updatedChat.title,
+                    createdAt: updatedChat.createdAt,
+                    updatedAt: updatedChat.updatedAt,
+                    messageCount: updatedChat.messageCount || 0,
+                  };
+                  // Re-sort by updatedAt descending
+                  return newChats.sort((a, b) => {
+                    const dateA = new Date(a.updatedAt).getTime();
+                    const dateB = new Date(b.updatedAt).getTime();
+                    return dateB - dateA;
+                  });
+                }
+                return prevChats;
+              });
+            }
+          } catch (error) {
+            console.error('Failed to fetch updated chat title:', error);
+          }
+        }, 2000); // Wait 2 seconds for AI title generation
       }
 
       if (accumulatedText.trim().length === 0) {
