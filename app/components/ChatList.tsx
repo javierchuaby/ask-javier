@@ -47,7 +47,7 @@ export function ChatList({
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
         <div className="mb-6 text-[var(--stone-400)]">
           {isValentine ? (
-            <div className="text-4xl animate-bounce">🌻</div>
+            <div className="text-4xl"></div>
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"

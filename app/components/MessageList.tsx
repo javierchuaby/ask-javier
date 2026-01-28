@@ -26,7 +26,7 @@ export function MessageList({ messages, isLoading, messagesEndRef }: MessageList
           {messages.length === 0 && !isLoading && (
             <div className="text-center text-[var(--chat-text-muted)] py-12 flex flex-col items-center gap-4">
               {isValentine ? (
-                <div className="text-4xl animate-bounce">🌼</div>
+                <div className="text-4xl animate-bounce"><img src="/daisies.png" alt="Daisy" className="w-12 h-12 object-contain" /></div>
               ) : null}
               <p>Start a conversation with Javier...</p>
             </div>
