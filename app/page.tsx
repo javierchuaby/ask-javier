@@ -11,6 +11,7 @@ import { TopBar } from "@/app/components/TopBar";
 import { MessageList } from "@/app/components/MessageList";
 import { InputArea } from "@/app/components/InputArea";
 import { LogoutModal } from "@/app/components/LogoutModal";
+import { isValentinePeriod } from "@/app/utils/dateUtils";
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
@@ -28,10 +29,15 @@ export default function Home() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const chatCache = useChatCache();
 
+  const isValentine = isValentinePeriod();
+
   // Ensure component is mounted before using theme
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isValentine && theme === 'dark') {
+      setTheme('light');
+    }
+  }, [isValentine, theme, setTheme]);
 
   // Filter chats by search query
   const filteredChats = useMemo(() => {
@@ -509,6 +515,15 @@ export default function Home() {
         onClose={() => setShowLogoutModal(false)}
         onConfirm={() => signOut()}
       />
+
+      {/* Valentine's Decorations (Hidden on mobile) */}
+      {isValentine && mounted && (
+        <>
+
+
+
+        </>
+      )}
     </div>
   );
 }

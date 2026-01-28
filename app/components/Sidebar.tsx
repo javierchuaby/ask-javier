@@ -5,6 +5,8 @@ import { faChildDress, faArrowRightFromBracket } from "@fortawesome/free-solid-s
 import { Chat } from "@/app/types/chat";
 import { ChatList } from "./ChatList";
 
+import { isValentinePeriod } from "@/app/utils/dateUtils";
+
 interface ChatGroup {
   label: string;
   chats: Chat[];
@@ -40,6 +42,8 @@ export function Sidebar({
   onDeleteChat,
   groupChatsByDate,
 }: SidebarProps) {
+  const isValentine = isValentinePeriod();
+
   return (
     <>
       {/* Backdrop overlay for mobile */}
@@ -138,8 +142,8 @@ export function Sidebar({
                 </div>
                 {/* Name and Username */}
                 <div className="flex flex-col mt-1">
-                  <span className="text-sm font-medium text-[var(--sidebar-text)]">Aiden Lei Lopez</span>
-                  <span className="text-xs text-[var(--chat-text-muted)]">@axd_lei</span>
+                  <span className={`text-sm font-medium text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Aiden Lei Lopez</span>
+                  <span className={`text-xs text-[var(--chat-text-muted)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>@axd_lei</span>
                 </div>
               </div>
               {/* Toggle Buttons */}
@@ -215,7 +219,7 @@ export function Sidebar({
                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                   />
                 </svg>
-                <span>New Chat</span>
+                <span className={isValentine ? "font-[family-name:var(--font-itim)]" : ""}>New Chat</span>
               </button>
             </div>
 
@@ -244,7 +248,7 @@ export function Sidebar({
                   icon={faArrowRightFromBracket}
                   className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
                 />
-                <span className="text-sm text-[var(--sidebar-text)]">Log out</span>
+                <span className={`text-base text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Log out</span>
               </button>
             </div>
           </div>
