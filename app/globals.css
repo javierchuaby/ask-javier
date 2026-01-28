@@ -5,7 +5,8 @@
   /* Typography */
   --font-sans: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
-  
+  --font-itim: var(--font-itim);
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -13,7 +14,7 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-xxl: 3rem;
-  
+
   /* Component Spacing */
   --spacing-sidebar-padding: 0.75rem;
   --spacing-input-area-padding-x: 1rem;
@@ -22,7 +23,7 @@
   --spacing-chat-item-padding-x: 0.75rem;
   --spacing-chat-item-padding-y: 0.625rem;
   --spacing-button-icon: 1.25rem;
-  
+
   /* Border Radius */
   --radius-chat: 1rem;
   --radius-input: 0.5rem;
@@ -30,23 +31,23 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 0.75rem;
-  
+
   /* Max Width */
   --max-width-chat: 50rem;
-  
+
   /* Shadows */
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  
+
   /* Transitions */
   --transition-default: all 0.2s ease-out;
   --transition-colors: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   --transition-opacity: opacity 0.3s ease;
   --transition-transform: transform 0.2s ease-out;
-  
+
   /* Opacity */
   --opacity-disabled: 0.5;
   --opacity-backdrop: 0.5;
-  
+
   /* Typography */
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
@@ -60,6 +61,39 @@
   --markdown-spacing-md: 1rem;
   --markdown-spacing-lg: 1.5rem;
   --markdown-spacing-xl: 2rem;
+
+  /* Valentine's Theme */
+  --valentine-bg: #FFF9FA;
+  --valentine-user-bubble: #FFC0CB;
+  --valentine-ai-bubble: #FFFFFF;
+  --valentine-accent: #D04848;
+  --valentine-gold: #FFD700;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+
+  14% {
+    transform: scale(1.3);
+  }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.3);
+  }
+
+  70% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 5s infinite;
 }
 
 /* ========================================
@@ -73,12 +107,12 @@
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --border: #ededed;
-  
+
   /* Sidebar */
   --sidebar-bg: #f9f9f9;
   --sidebar-border: #ededed;
   --sidebar-text: #111827;
-  
+
   /* Stone Palette */
   --stone-100: #f5f5f4;
   --stone-200: #e7e5e4;
@@ -86,7 +120,7 @@
   --stone-400: #a8a29e;
   --stone-600: #57534e;
   --stone-700: #44403c;
-  
+
   /* Input Bubble */
   --input-bg: #ffffff;
   --input-text: #0d0d0d;
@@ -98,20 +132,20 @@
   --input-button-bg: #000000;
   --input-button-color: #ffffff;
   --input-button-hover: rgba(0, 0, 0, 0.8);
-  
+
   /* Buttons */
   --button-hover: #efefef;
   --button-text: #4b5563;
   --button-padding: 0.5rem;
   --button-radius: 0.5rem;
-  
+
   /* Chat Items */
   --chat-bg-active: #eaeaea;
   --chat-bg-hover: #efefef;
   --chat-text: #1c1917;
   --chat-text-muted: #78716c;
   --chat-delete-hover: #e7e5e4;
-  
+
   /* Search Input */
   --search-bg: #fafaf9;
   --search-border: #e7e5e4;
@@ -119,7 +153,7 @@
   --search-placeholder: #a8a29e;
   --search-icon: #a8a29e;
   --search-focus-ring: #a8a29e;
-  
+
   /* Message Bubbles */
   --message-bubble-user-bg: #f4f4f4;
   --message-bubble-assistant-bg: #ffffff;
@@ -128,7 +162,7 @@
   --message-padding-y: 0.5rem;
   --message-max-width: 75%;
   --message-max-width-bot: 120%;
-  
+
   /* Markdown Colors */
   --markdown-text: #1c1917;
   --markdown-code-bg: #f5f5f4;
@@ -141,7 +175,7 @@
   --markdown-table-border: #e7e5e4;
   --markdown-table-header-bg: #f5f5f4;
   --markdown-hr: #e7e5e4;
-  
+
   /* Top Bar */
   --topbar-border: #ededed;
   --topbar-padding-x: 1rem;
@@ -159,12 +193,12 @@
   --text-primary: #ffffff;
   --text-secondary: #ffffff;
   --border: #2d2d2d;
-  
+
   /* Sidebar */
   --sidebar-bg: #181818;
   --sidebar-border: #242424;
   --sidebar-text: #ffffff;
-  
+
   /* Stone Palette */
   --stone-100: #44403c;
   --stone-200: #44403c;
@@ -172,7 +206,7 @@
   --stone-400: #ffffff;
   --stone-600: #4b5563;
   --stone-700: #44403c;
-  
+
   /* Input Bubble */
   --input-bg: #303030;
   --input-text: #ffffff;
@@ -181,18 +215,18 @@
   --input-button-bg: #ffffff;
   --input-button-color: #000000;
   --input-button-hover: rgba(255, 255, 255, 0.8);
-  
+
   /* Buttons */
   --button-hover: #2d2d2d;
   --button-text: #ffffff;
-  
+
   /* Chat Items */
   --chat-bg-active: #242424;
   --chat-bg-hover: #303030;
   --chat-text: #ffffff;
   --chat-text-muted: #afafaf;
   --chat-delete-hover: #303030;
-  
+
   /* Search Input */
   --search-bg: rgba(55, 65, 81, 0.5);
   --search-border: #4b5563;
@@ -200,11 +234,11 @@
   --search-placeholder: rgba(255, 255, 255, 0.6);
   --search-icon: #ffffff;
   --search-focus-ring: #a8a29e;
-  
+
   /* Message Bubbles */
   --message-bubble-user-bg: #303030;
   --message-bubble-assistant-bg: #212121;
-  
+
   /* Markdown Colors */
   --markdown-text: #ffffff;
   --markdown-code-bg: #2d2d2d;
@@ -217,7 +251,7 @@
   --markdown-table-border: #404040;
   --markdown-table-header-bg: #2d2d2d;
   --markdown-hr: #404040;
-  
+
   /* Top Bar */
   --topbar-border: #2c2c2c;
   --topbar-padding-x: 1rem;
@@ -240,7 +274,8 @@ body {
   box-shadow: var(--shadow-lg);
   padding: var(--input-padding-y) var(--input-padding-x);
   display: flex;
-  align-items: flex-end; /* Changed from center to flex-end for textarea alignment */
+  align-items: flex-end;
+  /* Changed from center to flex-end for textarea alignment */
   gap: var(--input-gap);
 }
 
@@ -251,17 +286,19 @@ body {
   border: none;
   outline: none;
   color: var(--input-text) !important;
-  font-size: 1rem;
+  font-size: 1.1875rem;
   padding: 0.25rem 0.5rem;
   line-height: 1.5;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+  white-space: pre-wrap;
+  /* Preserve whitespace and wrap text */
 }
 
 .input-bubble textarea {
   min-height: 24px;
-  max-height: 240px; /* 10 lines * 24px line height */
+  max-height: 240px;
+  /* 10 lines * 24px line height */
   resize: none;
   overflow-y: auto;
 }
@@ -314,7 +351,7 @@ body {
   border: 1px solid var(--stone-200);
   cursor: pointer;
   color: var(--input-text);
-  font-size: 0.875rem;
+  font-size: 1rem;
   transition: var(--transition-default);
   width: 100%;
 }
@@ -365,7 +402,7 @@ body {
 
 .chat-item span {
   flex: 1;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--chat-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -403,7 +440,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: var(--line-height-relaxed);
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -504,12 +541,12 @@ body {
   margin-bottom: 0;
 }
 
-.markdown-list-item > p {
+.markdown-list-item>p {
   margin-bottom: 0;
 }
 
-.markdown-list-item > ul,
-.markdown-list-item > ol {
+.markdown-list-item>ul,
+.markdown-list-item>ol {
   margin-top: var(--markdown-spacing-xs);
   margin-bottom: var(--markdown-spacing-xs);
 }
@@ -682,6 +719,7 @@ body {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

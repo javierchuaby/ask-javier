@@ -7,8 +7,8 @@ import { checkRateLimit, recordRequest, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Determine cookie name based on environment (matches NextAuth config)
 const isProduction = process.env.NODE_ENV === "production";
-const cookieName = isProduction 
-  ? "__Secure-next-auth.session-token" 
+const cookieName = isProduction
+  ? "__Secure-next-auth.session-token"
   : "next-auth.session-token";
 
 // Initialize Google Generative AI
@@ -29,7 +29,7 @@ async function generateChatTitle(firstMessage: string, chatId: string): Promise<
     // Check rate limit before making API call
     const modelName = 'gemini-3-flash';
     const rateLimitResult = await checkRateLimit(modelName, RATE_LIMITS[modelName]);
-    
+
     if (!rateLimitResult.allowed) {
       // Rate limit exceeded - return early (keep truncated title)
       return;
@@ -41,7 +41,7 @@ async function generateChatTitle(firstMessage: string, chatId: string): Promise<
 
     const model = genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: `You are a title generator. Generate a concise, descriptive title (3-5 words, maximum 50 characters) that captures the main topic or essence of the user's query. Return only the title text - no quotes, no explanations, no additional text. Make it specific and meaningful, avoiding generic phrases.`,
+      systemInstruction: process.env.TITLE_GENERATOR_SYSTEM_PROMPT || `You are a title generator. Generate a concise, descriptive title (3-5 words, maximum 50 characters) that captures the main topic or essence of the user's query. Return only the title text - no quotes, no explanations, no additional text. Make it specific and meaningful, avoiding generic phrases.`,
     });
 
     const prompt = `Generate a short title (3-5 words, max 50 characters) for this query:\n\n${firstMessage}`;
@@ -157,7 +157,7 @@ export async function POST(
       );
 
       // Generate and update title asynchronously (fire and forget)
-      generateChatTitle(content, chatId).catch(() => {});
+      generateChatTitle(content, chatId).catch(() => { });
     }
 
     return NextResponse.json({

@@ -1,5 +1,7 @@
 "use client";
 
+import { isValentinePeriod } from "@/app/utils/dateUtils";
+import { Heart } from "lucide-react";
 import { Chat } from "@/app/types/chat";
 
 interface ChatGroup {
@@ -26,6 +28,8 @@ export function ChatList({
   onDeleteChat,
   groupChatsByDate,
 }: ChatListProps) {
+  const isValentine = isValentinePeriod();
+
   if (loadingChats) {
     return (
       <div className="px-2 pb-2">
@@ -42,23 +46,27 @@ export function ChatList({
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
         <div className="mb-6 text-[var(--stone-400)]">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
+          {isValentine ? (
+            <div className="text-4xl animate-bounce">🌻</div>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-16 w-16"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          )}
         </div>
-        <p className="text-[var(--chat-text)] font-medium text-base mb-2">No chats yet</p>
-        <p className="text-[var(--chat-text-muted)] text-sm">Begin chatting with Javier to get started</p>
+        <p className={`text-[var(--chat-text)] font-medium text-base mb-2 ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>No chats yet</p>
+        <p className={`text-[var(--chat-text-muted)] text-sm ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Begin chatting with Javier to get started</p>
       </div>
     );
   }
@@ -76,7 +84,7 @@ export function ChatList({
       {groupChatsByDate(chats).map((group) => (
         <div key={group.label} className="mb-4">
           {!searchQuery && (
-            <div className="px-3 py-2 text-xs font-medium text-[var(--chat-text-muted)] uppercase tracking-wider">
+            <div className={`px-3 py-2 text-xs font-medium text-[var(--chat-text-muted)] uppercase tracking-wider ${isValentine ? "font-[family-name:var(--font-itim)] text-[var(--valentine-accent)]" : ""}`}>
               {group.label}
             </div>
           )}
@@ -84,10 +92,12 @@ export function ChatList({
             <div
               key={chat._id}
               onClick={() => onSwitchChat(chat._id)}
-              className={`chat-item group ${
-                currentChatId === chat._id ? "chat-item-active" : ""
-              }`}
+              className={`chat-item group ${currentChatId === chat._id ? "chat-item-active" : ""
+                } ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
             >
+              {isValentine && (
+                <img src="/nature.png" alt="Daisy" className="w-5 h-5 object-contain" />
+              )}
               <span>{chat.title}</span>
               <button
                 onClick={(e) => onDeleteChat(chat._id, e)}

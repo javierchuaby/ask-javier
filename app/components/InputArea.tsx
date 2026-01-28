@@ -2,6 +2,9 @@
 
 import { RefObject } from "react";
 
+import { Heart } from "lucide-react";
+import { isValentinePeriod } from "@/app/utils/dateUtils";
+
 interface InputAreaProps {
   input: string;
   isLoading: boolean;
@@ -17,11 +20,14 @@ export function InputArea({
   onInputChange,
   onSubmit,
 }: InputAreaProps) {
+  const isValentine = isValentinePeriod();
+  const showHeart = isValentine && input.trim().length > 0;
+
   return (
-    <div className="bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)]">
+    <div className={`bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>
       <div className="max-w-[var(--max-width-chat)] mx-auto">
         {/* Floating Bubble Container */}
-        <div className="input-bubble">
+        <div className={`input-bubble ${isValentine ? "border-[var(--valentine-user-bubble)]" : ""}`}>
           {/* Input Field - Changed to textarea */}
           <textarea
             ref={textareaRef}
@@ -33,7 +39,7 @@ export function InputArea({
                 onSubmit();
               }
             }}
-            placeholder="Ask anything"
+            placeholder={"Ask anything"}
             rows={1}
             style={{
               resize: "none",
@@ -48,21 +54,29 @@ export function InputArea({
             onClick={onSubmit}
             disabled={isLoading || !input.trim()}
             aria-label="Send message"
+            className={`${showHeart || isValentine ? "text-white" : ""} ${isValentine ? "!bg-[var(--valentine-accent)] hover:!bg-[#b93c3c] !opacity-100" : ""}`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="var(--input-button-color)"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
+            {showHeart ? (
+              <Heart
+                className={`h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)] transition-colors duration-300 ${isLoading ? "animate-pulse" : "animate-heartbeat"}`}
+                fill="currentColor"
               />
-            </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
+              </svg>
+            )}
           </button>
         </div>
       </div>
