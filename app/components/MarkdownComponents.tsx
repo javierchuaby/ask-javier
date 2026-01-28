@@ -18,11 +18,11 @@ export const markdownComponents: Components = {
   code: ({ className, children, ...props }) => {
     const isInline = !className;
     return isInline ? (
-      <code className="markdown-code-inline" {...props}>
+      <code className="markdown-code-inline">
         {children}
       </code>
     ) : (
-      <code className={className} {...props}>
+      <code className={className}>
         {children}
       </code>
     );
