@@ -8,7 +8,7 @@ const cookieName = isProduction
   ? "__Secure-next-auth.session-token" 
   : "next-auth.session-token";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip auth routes and static assets
