@@ -289,15 +289,31 @@ export async function POST(request: NextRequest) {
         // Build base system instruction
         let systemInstruction = process.env.JAVIER_SYSTEM_PROMPT || "";
 
+        // Add current date and time to system instruction
+        const now = new Date();
+        const currentDate = now.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            timeZone: 'Asia/Singapore'
+        });
+        const currentTime = now.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            timeZoneName: 'short',
+            timeZone: 'Asia/Singapore'
+        });
+        
+        systemInstruction += `\n\n### CURRENT DATE AND TIME\n- Today's date is: ${currentDate}\n- Current time is: ${currentTime}\n- When answering questions about dates, times, or current events, use this information.`;
+        
         // Add affection mirroring instruction if affection is detected
         if (detectedAffection) {
-            systemInstruction += `
-                ### AFFECTION MIRRORING
-                - The user has expressed affection toward you (ask-javier) in their message.
-                - You MUST mirror this affection naturally in your response.
-                - Mirror the exact phrase they used. For example, if they said "${detectedAffection}", respond with "${detectedAffection} too" (e.g., "i love u" → "I love you too", "love you" → "Love you too").
-                - Keep it brief and natural - don't overthink it. Just mirror the affection at the end of your response if it fits naturally, or incorporate it naturally into your response.
-            `;
+            const affectionInstruction = process.env.AFFECTION_MIRRORING_INSTRUCTION || "";
+            if (affectionInstruction) {
+                const formattedInstruction = affectionInstruction.replace(/\\n/g, '\n');
+                systemInstruction += "\n" + formattedInstruction.replace(/{AFFECTION_PHRASE}/g, detectedAffection);
+            }
         }
 
         const model = genAI.getGenerativeModel({
