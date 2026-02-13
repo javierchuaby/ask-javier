@@ -18,16 +18,6 @@ Create a `.env.local` file in the root directory with the following variables:
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                  |
 | `ALLOWED_EMAILS`       | Comma-separated whitelisted emails          |
 
-### Testing
-
-```bash
-pnpm test
-pnpm test:watch
-pnpm test:coverage
-```
-
-**Test stack:** Vitest (unit/integration), React Testing Library (components), MSW (API mocking).
-
 ### Running the Development Server
 
 ```bash
