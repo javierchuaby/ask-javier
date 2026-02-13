@@ -18,6 +18,16 @@ Create a `.env.local` file in the root directory with the following variables:
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                  |
 | `ALLOWED_EMAILS`       | Comma-separated whitelisted emails          |
 
+### Testing
+
+```bash
+pnpm test
+pnpm test:watch
+pnpm test:coverage
+```
+
+**Test stack:** Vitest (unit/integration), React Testing Library (components), MSW (API mocking).
+
 ### Running the Development Server
 
 ```bash
@@ -25,19 +35,3 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
-
-### Testing
-
-```bash
-pnpm test          # Run tests once
-pnpm test:watch    # Run tests in watch mode
-pnpm test:coverage # Run tests with coverage report
-```
-
-**Test stack:** Vitest (unit/integration), React Testing Library (components), MSW (API mocking).
-
-- Unit: `lib/rateLimit.ts`, `app/utils/dateUtils.ts`
-- Integration: API routes (`/api/chats`, `/api/chat`)
-- Component: `app/components/LogoutModal.test.tsx`
-
-MSW handlers in `mocks/` are ready for components that fetch from the API.
