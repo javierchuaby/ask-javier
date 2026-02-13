@@ -459,7 +459,29 @@ export async function POST(request: NextRequest) {
         Connection: "keep-alive",
       },
     });
-  } catch {
+  } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    const msg = e.message;
+    const isGeminiQuota =
+      msg.includes("429") ||
+      msg.includes("Quota exceeded") ||
+      msg.includes("Too Many Requests");
+    if (isGeminiQuota) {
+      const retryMatch = msg.match(/retry in (\d+(?:\.\d+)?)s/);
+      const retryAfter = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
+      return NextResponse.json(
+        {
+          error: "AI service quota exceeded",
+          message:
+            "The AI service is temporarily at capacity. Please try again in a minute.",
+          retryAfter,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": retryAfter.toString() },
+        },
+      );
+    }
     return NextResponse.json(
       { error: "Ask the real Javier, the system is down." },
       { status: 500 },

@@ -11,7 +11,7 @@ import { TopBar } from "@/app/components/TopBar";
 import { MessageList } from "@/app/components/MessageList";
 import { InputArea } from "@/app/components/InputArea";
 import { LogoutModal } from "@/app/components/LogoutModal";
-import { isValentinePeriod } from "@/app/utils/dateUtils";
+import { formatRetryTime, isValentinePeriod } from "@/app/utils/dateUtils";
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
@@ -27,9 +27,21 @@ export default function Home() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [rateLimitRetryIn, setRateLimitRetryIn] = useState<number | null>(null);
   const chatCache = useChatCache();
 
   const isValentine = isValentinePeriod();
+
+  // Countdown for rate limit banner (stops at 0; user dismisses via Retry)
+  useEffect(() => {
+    if (rateLimitRetryIn === null || rateLimitRetryIn <= 0) return;
+    const id = setInterval(() => {
+      setRateLimitRetryIn((prev) =>
+        prev === null || prev <= 0 ? prev : prev - 1,
+      );
+    }, 1000);
+    return () => clearInterval(id);
+  }, [rateLimitRetryIn]);
 
   // Ensure component is mounted before using theme
   useEffect(() => {
@@ -311,6 +323,22 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          const data = await response.json().catch(() => ({}));
+          const retryAfter = (data.retryAfter as number) ?? 60;
+          setRateLimitRetryIn(retryAfter);
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            if (newMessages[streamingIndex]) {
+              newMessages[streamingIndex] = {
+                ...newMessages[streamingIndex],
+                content: `I'm at capacity right now—please try again in about ${formatRetryTime(retryAfter)}.`,
+              };
+            }
+            return newMessages;
+          });
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -469,6 +497,8 @@ export default function Home() {
           textareaRef={textareaRef}
           onInputChange={setInput}
           onSubmit={handleAskJavier}
+          rateLimitRetryIn={rateLimitRetryIn}
+          onRetry={() => setRateLimitRetryIn(null)}
         />
       </main>
 

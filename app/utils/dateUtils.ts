@@ -1,3 +1,22 @@
+/**
+ * Format seconds into a human-readable string (e.g. "1 hr 2 mins 5 secs")
+ */
+export function formatRetryTime(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "Ready to try again.";
+
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} hr${hours !== 1 ? "s" : ""}`);
+  if (minutes > 0) parts.push(`${minutes} min${minutes !== 1 ? "s" : ""}`);
+  if (seconds > 0 || parts.length === 0)
+    parts.push(`${seconds} sec${seconds !== 1 ? "s" : ""}`);
+
+  return parts.join(" ");
+}
+
 export function isValentinePeriod(): boolean {
   const now = new Date(); // Current timestamp (UTC-based)
 

@@ -1,7 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { isValentinePeriod, getTimeUntilValentineEnd } from "./dateUtils";
+import {
+  formatRetryTime,
+  isValentinePeriod,
+  getTimeUntilValentineEnd,
+} from "./dateUtils";
 
 describe("dateUtils", () => {
+  describe("formatRetryTime", () => {
+    it("formats seconds as hrs, mins, secs", () => {
+      expect(formatRetryTime(3661)).toBe("1 hr 1 min 1 sec");
+      expect(formatRetryTime(125)).toBe("2 mins 5 secs");
+      expect(formatRetryTime(45)).toBe("45 secs");
+      expect(formatRetryTime(1)).toBe("1 sec");
+    });
+
+    it("returns Ready to try again when <= 0", () => {
+      expect(formatRetryTime(0)).toBe("Ready to try again.");
+      expect(formatRetryTime(-1)).toBe("Ready to try again.");
+    });
+  });
+
   describe("isValentinePeriod", () => {
     beforeEach(() => {
       vi.useFakeTimers();

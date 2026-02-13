@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { AI_MODELS } from "./constants";
 import { checkRateLimit, recordRequest, RATE_LIMITS } from "./rateLimit";
 
 // Helper to get Pacific date string (rateLimit uses America/Los_Angeles)
@@ -184,11 +185,11 @@ describe("rateLimit", () => {
   describe("RATE_LIMITS", () => {
     it("exports correct rate limit config for CHAT and TITLE models", () => {
       expect(RATE_LIMITS).toBeDefined();
-      expect(RATE_LIMITS["gemini-2.5-flash-lite"]).toEqual({
+      expect(RATE_LIMITS[AI_MODELS.CHAT]).toEqual({
         perMinute: 9,
         perDay: 19,
       });
-      expect(RATE_LIMITS["gemini-2.5-flash"]).toEqual({
+      expect(RATE_LIMITS[AI_MODELS.TITLE]).toEqual({
         perMinute: 4,
         perDay: 19,
       });

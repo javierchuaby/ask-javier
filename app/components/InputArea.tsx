@@ -3,7 +3,7 @@
 import { RefObject } from "react";
 
 import { Heart } from "lucide-react";
-import { isValentinePeriod } from "@/app/utils/dateUtils";
+import { formatRetryTime, isValentinePeriod } from "@/app/utils/dateUtils";
 
 interface InputAreaProps {
   input: string;
@@ -11,6 +11,8 @@ interface InputAreaProps {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
+  rateLimitRetryIn: number | null;
+  onRetry?: () => void;
 }
 
 export function InputArea({
@@ -19,6 +21,8 @@ export function InputArea({
   textareaRef,
   onInputChange,
   onSubmit,
+  rateLimitRetryIn,
+  onRetry,
 }: InputAreaProps) {
   const isValentine = isValentinePeriod();
   const showHeart = isValentine && input.trim().length > 0;
@@ -27,7 +31,26 @@ export function InputArea({
     <div
       className={`bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
     >
-      <div className="max-w-[var(--max-width-chat)] mx-auto">
+      <div className="max-w-[var(--max-width-chat)] mx-auto flex flex-col gap-2">
+        {/* Rate limit banner */}
+        {rateLimitRetryIn !== null && (
+          <div className="rate-limit-banner flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/50">
+            <span className="text-[var(--text-primary)]">
+              {rateLimitRetryIn > 0
+                ? `AI is busy. Try again in ${formatRetryTime(rateLimitRetryIn)}.`
+                : "Ready to try again."}
+            </span>
+            {rateLimitRetryIn === 0 && onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-md bg-amber-200 px-3 py-1.5 text-sm font-medium text-amber-900 transition-colors hover:bg-amber-300 dark:bg-amber-800 dark:text-amber-100 dark:hover:bg-amber-700"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
         {/* Floating Bubble Container */}
         <div
           className={`input-bubble ${isValentine ? "border-[var(--valentine-user-bubble)]" : ""}`}
@@ -56,7 +79,11 @@ export function InputArea({
           {/* Send Button */}
           <button
             onClick={onSubmit}
-            disabled={isLoading || !input.trim()}
+            disabled={
+              isLoading ||
+              !input.trim() ||
+              (rateLimitRetryIn !== null && rateLimitRetryIn > 0)
+            }
             aria-label="Send message"
             className={`${showHeart || isValentine ? "text-white" : ""} ${isValentine ? "!bg-[var(--valentine-accent)] hover:!bg-[#b93c3c] !opacity-100" : ""}`}
           >
