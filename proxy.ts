@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { env } from "@/lib/env";
 
 // Determine cookie name based on environment (matches NextAuth config)
-const isProduction = process.env.NODE_ENV === "production";
-const cookieName = isProduction 
-  ? "__Secure-next-auth.session-token" 
+const isProduction = env.NODE_ENV === "production";
+const cookieName = isProduction
+  ? "__Secure-next-auth.session-token"
   : "next-auth.session-token";
 
 export async function proxy(request: NextRequest) {
@@ -25,7 +26,7 @@ export async function proxy(request: NextRequest) {
   // Check for token using the configured cookie name
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: env.NEXTAUTH_SECRET,
     cookieName: cookieName,
   });
 
@@ -40,7 +41,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

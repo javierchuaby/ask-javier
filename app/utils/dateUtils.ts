@@ -11,7 +11,10 @@ export function isValentinePeriod(): boolean {
   return now >= start && now < end;
 }
 
-export function getTimeUntilValentineEnd(): { days: number; hours: number } | null {
+export function getTimeUntilValentineEnd(): {
+  days: number;
+  hours: number;
+} | null {
   if (!isValentinePeriod()) return null;
 
   const now = new Date();

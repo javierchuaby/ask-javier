@@ -1,7 +1,10 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChildDress, faArrowRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChildDress,
+  faArrowRightFromBracket,
+} from "@fortawesome/free-solid-svg-icons";
 import { Chat } from "@/app/types/chat";
 import { ChatList } from "./ChatList";
 
@@ -130,10 +133,17 @@ export function Sidebar({
               {/* Profile Section */}
               <div className="flex items-start gap-2 mt-1">
                 {/* Profile Icon */}
-                <div className="flex-shrink-0" style={{ marginTop: "0.5rem", marginLeft: "0.2rem" }}>
+                <div
+                  className="flex-shrink-0"
+                  style={{ marginTop: "0.5rem", marginLeft: "0.2rem" }}
+                >
                   <FontAwesomeIcon
                     icon={faChildDress}
-                    className={isValentine ? "text-[#DA6A68]" : "text-[#FBBF24] dark:text-[#fed11d]"}
+                    className={
+                      isValentine
+                        ? "text-[#DA6A68]"
+                        : "text-[#FBBF24] dark:text-[#fed11d]"
+                    }
                     style={{
                       width: "30px",
                       height: "30px",
@@ -142,8 +152,16 @@ export function Sidebar({
                 </div>
                 {/* Name and Username */}
                 <div className="flex flex-col mt-1">
-                  <span className={`text-sm font-medium text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Aiden Lei Lopez</span>
-                  <span className={`text-xs text-[var(--chat-text-muted)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>@axd_lei</span>
+                  <span
+                    className={`text-sm font-medium text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+                  >
+                    Aiden Lei Lopez
+                  </span>
+                  <span
+                    className={`text-xs text-[var(--chat-text-muted)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+                  >
+                    @axd_lei
+                  </span>
                 </div>
               </div>
               {/* Toggle Buttons */}
@@ -219,7 +237,13 @@ export function Sidebar({
                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                   />
                 </svg>
-                <span className={isValentine ? "font-[family-name:var(--font-itim)]" : ""}>New Chat</span>
+                <span
+                  className={
+                    isValentine ? "font-[family-name:var(--font-itim)]" : ""
+                  }
+                >
+                  New Chat
+                </span>
               </button>
             </div>
 
@@ -248,7 +272,11 @@ export function Sidebar({
                   icon={faArrowRightFromBracket}
                   className="h-[var(--spacing-button-icon)] w-[var(--spacing-button-icon)]"
                 />
-                <span className={`text-base text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Log out</span>
+                <span
+                  className={`text-base text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+                >
+                  Log out
+                </span>
               </button>
             </div>
           </div>

@@ -1,19 +1,16 @@
-import { getDb } from './mongodb';
+import { getDb } from "./mongodb";
+import { AI_MODELS } from "./constants";
 
 // Flag to track if indexes have been initialized
 let indexesInitialized = false;
 
 // Rate limit configurations for each model
 export const RATE_LIMITS = {
-  'gemini-2.5-flash-lite': {
+  [AI_MODELS.CHAT]: {
     perMinute: 9,
     perDay: 19,
   },
-  'gemini-2.5-flash': {
-    perMinute: 4,
-    perDay: 19,
-  },
-  'gemini-3-flash': {
+  [AI_MODELS.TITLE]: {
     perMinute: 4,
     perDay: 19,
   },
@@ -22,7 +19,7 @@ export const RATE_LIMITS = {
 export interface RateLimitResult {
   allowed: boolean;
   retryAfter?: number; // seconds until next available slot
-  reason?: 'perMinute' | 'perDay';
+  reason?: "perMinute" | "perDay";
 }
 
 interface RateLimitRequest {
@@ -44,10 +41,10 @@ interface RateLimitDocument {
  */
 export async function checkRateLimit(
   model: string,
-  limits: { perMinute: number; perDay: number }
+  limits: { perMinute: number; perDay: number },
 ): Promise<RateLimitResult> {
   const db = await getDb();
-  const rateLimitsCollection = db.collection('rateLimits');
+  const rateLimitsCollection = db.collection("rateLimits");
 
   // Lazy initialization of indexes (only once)
   if (!indexesInitialized) {
@@ -71,10 +68,9 @@ export async function checkRateLimit(
     day: "2-digit",
   });
   const parts = pacificFormatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === "year")!.value);
-  const month = parseInt(parts.find(p => p.type === "month")!.value) - 1;
-  const day = parseInt(parts.find(p => p.type === "day")!.value);
-  const todayPacific = new Date(Date.UTC(year, month, day));
+  const year = parseInt(parts.find((p) => p.type === "year")!.value);
+  const month = parseInt(parts.find((p) => p.type === "month")!.value) - 1;
+  const day = parseInt(parts.find((p) => p.type === "day")!.value);
   const todayString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   // Use findOneAndUpdate with atomic operations to prevent race conditions
@@ -90,8 +86,8 @@ export async function checkRateLimit(
     },
     {
       upsert: true,
-      returnDocument: 'after',
-    }
+      returnDocument: "after",
+    },
   );
 
   let rateLimitDoc = result as RateLimitDocument | null;
@@ -113,7 +109,7 @@ export async function checkRateLimit(
 
   // Ensure we have the required fields
   if (!rateLimitDoc.requests) rateLimitDoc.requests = [];
-  if (typeof rateLimitDoc.dailyCount !== 'number') rateLimitDoc.dailyCount = 0;
+  if (typeof rateLimitDoc.dailyCount !== "number") rateLimitDoc.dailyCount = 0;
   if (!rateLimitDoc.lastResetDate) rateLimitDoc.lastResetDate = todayString;
 
   // Reset daily count if it's a new day (atomic update)
@@ -125,7 +121,7 @@ export async function checkRateLimit(
           dailyCount: 0,
           lastResetDate: todayString,
         },
-      }
+      },
     );
     rateLimitDoc.dailyCount = 0;
     rateLimitDoc.lastResetDate = todayString;
@@ -136,7 +132,7 @@ export async function checkRateLimit(
     (req: RateLimitRequest) => {
       const reqTime = new Date(req.timestamp);
       return reqTime >= oneMinuteAgo;
-    }
+    },
   );
 
   // Check per-minute limit
@@ -144,16 +140,18 @@ export async function checkRateLimit(
     // Calculate retry after time (seconds until oldest request expires)
     // Find the oldest request timestamp
     const oldestTime = Math.min(
-      ...recentRequests.map((req: RateLimitRequest) => new Date(req.timestamp).getTime())
+      ...recentRequests.map((req: RateLimitRequest) =>
+        new Date(req.timestamp).getTime(),
+      ),
     );
     const retryAfter = Math.ceil(
-      (oldestTime + 60 * 1000 - now.getTime()) / 1000
+      (oldestTime + 60 * 1000 - now.getTime()) / 1000,
     );
 
     return {
       allowed: false,
       retryAfter: Math.max(1, retryAfter),
-      reason: 'perMinute',
+      reason: "perMinute",
     };
   }
 
@@ -171,20 +169,28 @@ export async function checkRateLimit(
       second: "2-digit",
       hour12: false,
     });
-    
+
     const pacificParts = pacificTimeFormatter.formatToParts(now);
-    const pacificHour = parseInt(pacificParts.find(p => p.type === "hour")!.value);
-    const pacificMinute = parseInt(pacificParts.find(p => p.type === "minute")!.value);
-    const pacificSecond = parseInt(pacificParts.find(p => p.type === "second")!.value);
-    
+    const pacificHour = parseInt(
+      pacificParts.find((p) => p.type === "hour")!.value,
+    );
+    const pacificMinute = parseInt(
+      pacificParts.find((p) => p.type === "minute")!.value,
+    );
+    const pacificSecond = parseInt(
+      pacificParts.find((p) => p.type === "second")!.value,
+    );
+
     // Calculate seconds until next midnight Pacific Time
-    const secondsUntilMidnight = (24 * 60 * 60) - (pacificHour * 60 * 60 + pacificMinute * 60 + pacificSecond);
+    const secondsUntilMidnight =
+      24 * 60 * 60 -
+      (pacificHour * 60 * 60 + pacificMinute * 60 + pacificSecond);
     const retryAfter = Math.ceil(secondsUntilMidnight);
 
     return {
       allowed: false,
       retryAfter: Math.max(1, retryAfter),
-      reason: 'perDay',
+      reason: "perDay",
     };
   }
 
@@ -197,7 +203,7 @@ export async function checkRateLimit(
  */
 export async function recordRequest(model: string): Promise<void> {
   const db = await getDb();
-  const rateLimitsCollection = db.collection('rateLimits');
+  const rateLimitsCollection = db.collection("rateLimits");
 
   const now = new Date();
   // Use Pacific Time (UTC-8) for daily resets to match Google AI Studio
@@ -208,9 +214,9 @@ export async function recordRequest(model: string): Promise<void> {
     day: "2-digit",
   });
   const parts = pacificFormatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === "year")!.value);
-  const month = parseInt(parts.find(p => p.type === "month")!.value) - 1;
-  const day = parseInt(parts.find(p => p.type === "day")!.value);
+  const year = parseInt(parts.find((p) => p.type === "year")!.value);
+  const month = parseInt(parts.find((p) => p.type === "month")!.value) - 1;
+  const day = parseInt(parts.find((p) => p.type === "day")!.value);
   const todayString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   // Update rate limit document
@@ -227,18 +233,24 @@ export async function recordRequest(model: string): Promise<void> {
         lastResetDate: todayString,
       },
     },
-    { upsert: true }
+    { upsert: true },
   );
 
   // Clean up old requests periodically (keep only last 100 to avoid document bloat)
-  const rateLimitDoc = await rateLimitsCollection.findOne({ model }) as RateLimitDocument | null;
-  if (rateLimitDoc && rateLimitDoc.requests && rateLimitDoc.requests.length > 100) {
+  const rateLimitDoc = (await rateLimitsCollection.findOne({
+    model,
+  })) as RateLimitDocument | null;
+  if (
+    rateLimitDoc &&
+    rateLimitDoc.requests &&
+    rateLimitDoc.requests.length > 100
+  ) {
     const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
     const recentRequests = rateLimitDoc.requests.filter(
       (req: RateLimitRequest) => {
         const reqTime = new Date(req.timestamp);
         return reqTime >= oneMinuteAgo;
-      }
+      },
     );
 
     await rateLimitsCollection.updateOne(
@@ -247,7 +259,7 @@ export async function recordRequest(model: string): Promise<void> {
         $set: {
           requests: recentRequests,
         },
-      }
+      },
     );
   }
 }
@@ -258,7 +270,7 @@ export async function recordRequest(model: string): Promise<void> {
  */
 export async function initializeRateLimitIndexes(): Promise<void> {
   const db = await getDb();
-  const rateLimitsCollection = db.collection('rateLimits');
+  const rateLimitsCollection = db.collection("rateLimits");
 
   // Create index on model field for fast lookups
   await rateLimitsCollection.createIndex({ model: 1 }, { unique: true });

@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback } from "react";
 
 interface ChatMessage {
   role: "aiden" | "javier";
@@ -23,7 +23,7 @@ export function useChatCache() {
   const get = useCallback((chatId: string): ChatMessage[] | null => {
     const cache = cacheRef.current;
     const entry = cache.get(chatId);
-    
+
     if (entry) {
       // Move to end to mark as most recently used
       cache.delete(chatId);
@@ -33,7 +33,7 @@ export function useChatCache() {
       });
       return entry.messages;
     }
-    
+
     return null;
   }, []);
 
@@ -43,12 +43,12 @@ export function useChatCache() {
    */
   const set = useCallback((chatId: string, messages: ChatMessage[]): void => {
     const cache = cacheRef.current;
-    
+
     // Remove existing entry if present (will re-add at end)
     if (cache.has(chatId)) {
       cache.delete(chatId);
     }
-    
+
     // Evict LRU entry if cache is full
     if (cache.size >= MAX_CACHE_SIZE) {
       // First entry is least recently used
@@ -57,7 +57,7 @@ export function useChatCache() {
         cache.delete(firstKey);
       }
     }
-    
+
     // Add new entry at end (most recently used)
     cache.set(chatId, {
       messages,

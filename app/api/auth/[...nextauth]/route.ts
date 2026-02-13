@@ -1,27 +1,29 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthConfig } from "next-auth";
+import { env } from "@/lib/env";
 
 // Whitelist of allowed email addresses
-const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || "")
-  .split(",")
+const ALLOWED_EMAILS = env.ALLOWED_EMAILS.split(",")
   .map((email) => email.trim().toLowerCase())
   .filter((email) => email.length > 0);
 
 // Determine if we are in production
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = env.NODE_ENV === "production";
 
 const authOptions: NextAuthConfig = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
   ],
   trustHost: true,
   cookies: {
     sessionToken: {
-      name: isProduction ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      name: isProduction
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -62,7 +64,7 @@ const authOptions: NextAuthConfig = {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 };
 
 const { handlers } = NextAuth(authOptions);

@@ -3,35 +3,23 @@
 import { Components } from "react-markdown";
 
 export const markdownComponents: Components = {
-  p: ({ children }) => (
-    <p className="markdown-paragraph">{children}</p>
-  ),
+  p: ({ children }) => <p className="markdown-paragraph">{children}</p>,
   ul: ({ children }) => (
     <ul className="markdown-list markdown-list-unordered">{children}</ul>
   ),
   ol: ({ children }) => (
     <ol className="markdown-list markdown-list-ordered">{children}</ol>
   ),
-  li: ({ children }) => (
-    <li className="markdown-list-item">{children}</li>
-  ),
-  code: ({ className, children, ...props }) => {
+  li: ({ children }) => <li className="markdown-list-item">{children}</li>,
+  code: ({ className, children, ..._props }) => {
     const isInline = !className;
     return isInline ? (
-      <code className="markdown-code-inline">
-        {children}
-      </code>
+      <code className="markdown-code-inline">{children}</code>
     ) : (
-      <code className={className}>
-        {children}
-      </code>
+      <code className={className}>{children}</code>
     );
   },
-  pre: ({ children }) => (
-    <pre className="markdown-code-block">
-      {children}
-    </pre>
-  ),
+  pre: ({ children }) => <pre className="markdown-code-block">{children}</pre>,
   h1: ({ children }) => (
     <h1 className="markdown-heading markdown-heading-1">{children}</h1>
   ),
@@ -53,14 +41,17 @@ export const markdownComponents: Components = {
   strong: ({ children }) => (
     <strong className="markdown-strong">{children}</strong>
   ),
-  em: ({ children }) => (
-    <em className="markdown-em">{children}</em>
-  ),
+  em: ({ children }) => <em className="markdown-em">{children}</em>,
   blockquote: ({ children }) => (
     <blockquote className="markdown-blockquote">{children}</blockquote>
   ),
   a: ({ href, children }) => (
-    <a href={href} className="markdown-link" target="_blank" rel="noopener noreferrer">
+    <a
+      href={href}
+      className="markdown-link"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {children}
     </a>
   ),
@@ -75,16 +66,8 @@ export const markdownComponents: Components = {
   tbody: ({ children }) => (
     <tbody className="markdown-table-body">{children}</tbody>
   ),
-  tr: ({ children }) => (
-    <tr className="markdown-table-row">{children}</tr>
-  ),
-  th: ({ children }) => (
-    <th className="markdown-table-header">{children}</th>
-  ),
-  td: ({ children }) => (
-    <td className="markdown-table-cell">{children}</td>
-  ),
-  hr: () => (
-    <hr className="markdown-hr" />
-  ),
+  tr: ({ children }) => <tr className="markdown-table-row">{children}</tr>,
+  th: ({ children }) => <th className="markdown-table-header">{children}</th>,
+  td: ({ children }) => <td className="markdown-table-cell">{children}</td>,
+  hr: () => <hr className="markdown-hr" />,
 };

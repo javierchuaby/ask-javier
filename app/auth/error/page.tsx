@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 // Prevent static generation - useSearchParams requires runtime URL access
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 const errorMessages: Record<string, { title: string; description: string }> = {
   AccessDenied: {
@@ -75,7 +75,13 @@ function ErrorContent() {
 export default function AuthError() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-[#181818] dark:via-[#181818] dark:to-[#212121]">
-      <Suspense fallback={<div className="w-full max-w-[500px] mx-4 text-center text-gray-600 dark:text-[#ffffff]/70">Loading...</div>}>
+      <Suspense
+        fallback={
+          <div className="w-full max-w-[500px] mx-4 text-center text-gray-600 dark:text-[#ffffff]/70">
+            Loading...
+          </div>
+        }
+      >
         <ErrorContent />
       </Suspense>
     </div>

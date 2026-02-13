@@ -10,9 +10,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       refetchOnWindowFocus={false}
       refetchWhenOffline={false}
     >
-      <ThemeProvider 
-        attribute="class" 
-        defaultTheme="light" 
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
         enableSystem={false}
         themes={["light", "dark"]}
       >

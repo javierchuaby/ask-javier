@@ -24,10 +24,14 @@ export function InputArea({
   const showHeart = isValentine && input.trim().length > 0;
 
   return (
-    <div className={`bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>
+    <div
+      className={`bg-[var(--bg-primary)] px-[var(--spacing-input-area-padding-x)] pb-[var(--spacing-input-area-padding-y-bottom)] pt-[var(--spacing-input-area-padding-y-top)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+    >
       <div className="max-w-[var(--max-width-chat)] mx-auto">
         {/* Floating Bubble Container */}
-        <div className={`input-bubble ${isValentine ? "border-[var(--valentine-user-bubble)]" : ""}`}>
+        <div
+          className={`input-bubble ${isValentine ? "border-[var(--valentine-user-bubble)]" : ""}`}
+        >
           {/* Input Field - Changed to textarea */}
           <textarea
             ref={textareaRef}

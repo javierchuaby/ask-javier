@@ -25,8 +25,12 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl p-10 shadow-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Log out</h2>
-            <p className="text-[var(--text-secondary)] mb-6">Are you sure you want to log out?</p>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+              Log out
+            </h2>
+            <p className="text-[var(--text-secondary)] mb-6">
+              Are you sure you want to log out?
+            </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={onClose}

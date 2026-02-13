@@ -1,43 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
-import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import { getToken } from "next-auth/jwt";
+import { env } from "@/lib/env";
 
 // Determine cookie name based on environment (matches NextAuth config)
-const isProduction = process.env.NODE_ENV === "production";
-const cookieName = isProduction 
-  ? "__Secure-next-auth.session-token" 
+const isProduction = env.NODE_ENV === "production";
+const cookieName = isProduction
+  ? "__Secure-next-auth.session-token"
   : "next-auth.session-token";
 
 // GET /api/chats/[chatId] - Get chat with messages
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ chatId: string }> }
+  { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: env.NEXTAUTH_SECRET,
     cookieName: cookieName,
   });
 
   if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const { chatId } = await params;
-    
+
     if (!ObjectId.isValid(chatId)) {
-      return NextResponse.json(
-        { error: 'Invalid chat ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid chat ID" }, { status: 400 });
     }
 
     const db = await getDb();
-    const chatsCollection = db.collection('chats');
-    const messagesCollection = db.collection('messages');
+    const chatsCollection = db.collection("chats");
+    const messagesCollection = db.collection("messages");
 
     // Get chat
     const chat = await chatsCollection.findOne({
@@ -45,10 +43,7 @@ export async function GET(
     });
 
     if (!chat) {
-      return NextResponse.json(
-        { error: 'Chat not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
     // Get messages for this chat
@@ -57,7 +52,7 @@ export async function GET(
       .sort({ index: 1 })
       .toArray();
 
-    const messagesWithId = messages.map(msg => ({
+    const messagesWithId = messages.map((msg) => ({
       _id: msg._id.toString(),
       role: msg.role,
       content: msg.content,
@@ -75,8 +70,8 @@ export async function GET(
     });
   } catch {
     return NextResponse.json(
-      { error: 'Failed to fetch chat' },
-      { status: 500 }
+      { error: "Failed to fetch chat" },
+      { status: 500 },
     );
   }
 }
@@ -84,42 +79,36 @@ export async function GET(
 // DELETE /api/chats/[chatId] - Delete chat and its messages
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ chatId: string }> }
+  { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: env.NEXTAUTH_SECRET,
     cookieName: cookieName,
   });
 
   if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const { chatId } = await params;
-    
+
     if (!ObjectId.isValid(chatId)) {
-      return NextResponse.json(
-        { error: 'Invalid chat ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid chat ID" }, { status: 400 });
     }
 
     const db = await getDb();
-    const chatsCollection = db.collection('chats');
-    const messagesCollection = db.collection('messages');
+    const chatsCollection = db.collection("chats");
+    const messagesCollection = db.collection("messages");
     const objectId = new ObjectId(chatId);
 
     // Delete chat
     const chatResult = await chatsCollection.deleteOne({ _id: objectId });
 
     if (chatResult.deletedCount === 0) {
-      return NextResponse.json(
-        { error: 'Chat not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
     // Delete all messages for this chat
@@ -128,8 +117,8 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
-      { error: 'Failed to delete chat' },
-      { status: 500 }
+      { error: "Failed to delete chat" },
+      { status: 500 },
     );
   }
 }
@@ -137,62 +126,53 @@ export async function DELETE(
 // PATCH /api/chats/[chatId] - Update chat title
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ chatId: string }> }
+  { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: env.NEXTAUTH_SECRET,
     cookieName: cookieName,
   });
 
   if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const { chatId } = await params;
     const { title } = await request.json();
-    
+
     if (!ObjectId.isValid(chatId)) {
-      return NextResponse.json(
-        { error: 'Invalid chat ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid chat ID" }, { status: 400 });
     }
 
-    if (!title || typeof title !== 'string') {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
+    if (!title || typeof title !== "string") {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
     const db = await getDb();
-    const chatsCollection = db.collection('chats');
+    const chatsCollection = db.collection("chats");
 
     const result = await chatsCollection.updateOne(
       { _id: new ObjectId(chatId) },
-      { 
-        $set: { 
+      {
+        $set: {
           title,
           updatedAt: new Date(),
-        } 
-      }
+        },
+      },
     );
 
     if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Chat not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
-      { error: 'Failed to update chat' },
-      { status: 500 }
+      { error: "Failed to update chat" },
+      { status: 500 },
     );
   }
 }

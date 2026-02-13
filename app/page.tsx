@@ -34,8 +34,8 @@ export default function Home() {
   // Ensure component is mounted before using theme
   useEffect(() => {
     setMounted(true);
-    if (isValentine && theme === 'dark') {
-      setTheme('light');
+    if (isValentine && theme === "dark") {
+      setTheme("light");
     }
   }, [isValentine, theme, setTheme]);
 
@@ -129,7 +129,10 @@ export default function Home() {
     }
   };
 
-  const updateChatInList = (chatId: string, updates?: Partial<Chat> & { messageCountIncrement?: number }) => {
+  const updateChatInList = (
+    chatId: string,
+    updates?: Partial<Chat> & { messageCountIncrement?: number },
+  ) => {
     setChats((prevChats) => {
       const chatIndex = prevChats.findIndex((chat) => chat._id === chatId);
 
@@ -164,37 +167,6 @@ export default function Home() {
     });
   };
 
-  const rollbackChatUpdate = (chatId: string, previousMessageCount: number, previousUpdatedAt: string) => {
-    setChats((prevChats) => {
-      const chatIndex = prevChats.findIndex((chat) => chat._id === chatId);
-
-      if (chatIndex === -1) {
-        return prevChats;
-      }
-
-      const chat = prevChats[chatIndex];
-      const rolledBackChat: Chat = {
-        ...chat,
-        messageCount: previousMessageCount,
-        updatedAt: previousUpdatedAt,
-      };
-
-      // Remove chat from current position
-      const newChats = [...prevChats];
-      newChats.splice(chatIndex, 1);
-
-      // Re-insert at original position (or re-sort to find correct position)
-      newChats.push(rolledBackChat);
-
-      // Re-sort by updatedAt descending
-      return newChats.sort((a, b) => {
-        const dateA = new Date(a.updatedAt).getTime();
-        const dateB = new Date(b.updatedAt).getTime();
-        return dateB - dateA;
-      });
-    });
-  };
-
   const loadChatMessages = async (chatId: string) => {
     // Check cache first
     const cachedMessages = chatCache.get(chatId);
@@ -212,7 +184,7 @@ export default function Home() {
           (msg: { role: "aiden" | "javier"; content: string }) => ({
             role: msg.role,
             content: msg.content,
-          })
+          }),
         );
         setMessages(formattedMessages);
         // Store in cache
@@ -276,27 +248,15 @@ export default function Home() {
     }
   };
 
-  const saveMessage = async (chatId: string, role: "aiden" | "javier", content: string): Promise<boolean> => {
-    try {
-      const response = await authenticatedFetch(`/api/chats/${chatId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, content }),
-      });
-      return response.ok;
-    } catch {
-      // Error is already handled by authenticatedFetch (redirects on 401)
-      return false;
-    }
-  };
-
   const handleAskJavier = async () => {
     if (!input.trim() || isLoading) return;
 
     // Add length validation on frontend
     const MAX_INPUT_LENGTH = 100000; // Match backend limit
     if (input.length > MAX_INPUT_LENGTH) {
-      alert(`Message too long. Maximum length is ${MAX_INPUT_LENGTH} characters.`);
+      alert(
+        `Message too long. Maximum length is ${MAX_INPUT_LENGTH} characters.`,
+      );
       return;
     }
 
@@ -402,7 +362,9 @@ export default function Home() {
             if (response.ok) {
               const updatedChat = await response.json();
               setChats((prevChats) => {
-                const chatIndex = prevChats.findIndex((chat) => chat._id === chatId);
+                const chatIndex = prevChats.findIndex(
+                  (chat) => chat._id === chatId,
+                );
                 if (chatIndex !== -1) {
                   const newChats = [...prevChats];
                   newChats[chatIndex] = {
@@ -423,7 +385,7 @@ export default function Home() {
               });
             }
           } catch (error) {
-            console.error('Failed to fetch updated chat title:', error);
+            console.error("Failed to fetch updated chat title:", error);
           }
         }, 2000); // Wait 2 seconds for AI title generation
       }
@@ -517,13 +479,7 @@ export default function Home() {
       />
 
       {/* Valentine's Decorations (Hidden on mobile) */}
-      {isValentine && mounted && (
-        <>
-
-
-
-        </>
-      )}
+      {isValentine && mounted && <></>}
     </div>
   );
 }

@@ -30,8 +30,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       }}
     >
       <div
-        className={`message-bubble ${message.role === "aiden" ? "max-w-[var(--message-max-width)]" : "w-[800px] !max-w-none"} ${message.role === "aiden" ? userBubbleClass : aiBubbleClass
-          }`}
+        className={`message-bubble ${message.role === "aiden" ? "max-w-[var(--message-max-width)]" : "w-[800px] !max-w-none"} ${
+          message.role === "aiden" ? userBubbleClass : aiBubbleClass
+        }`}
       >
         {message.role === "javier" ? (
           <ReactMarkdown components={markdownComponents}>

@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { isValentinePeriod } from "@/app/utils/dateUtils";
-import { Heart } from "lucide-react";
 import { Chat } from "@/app/types/chat";
 
 interface ChatGroup {
@@ -65,8 +65,16 @@ export function ChatList({
             </svg>
           )}
         </div>
-        <p className={`text-[var(--chat-text)] font-medium text-base mb-2 ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>No chats yet</p>
-        <p className={`text-[var(--chat-text-muted)] text-sm ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Begin chatting with Javier to get started</p>
+        <p
+          className={`text-[var(--chat-text)] font-medium text-base mb-2 ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+        >
+          No chats yet
+        </p>
+        <p
+          className={`text-[var(--chat-text-muted)] text-sm ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+        >
+          Begin chatting with Javier to get started
+        </p>
       </div>
     );
   }
@@ -84,7 +92,9 @@ export function ChatList({
       {groupChatsByDate(chats).map((group) => (
         <div key={group.label} className="mb-4">
           {!searchQuery && (
-            <div className={`px-3 py-2 text-xs font-medium text-[var(--chat-text-muted)] uppercase tracking-wider ${isValentine ? "font-[family-name:var(--font-itim)] text-[var(--valentine-accent)]" : ""}`}>
+            <div
+              className={`px-3 py-2 text-xs font-medium text-[var(--chat-text-muted)] uppercase tracking-wider ${isValentine ? "font-[family-name:var(--font-itim)] text-[var(--valentine-accent)]" : ""}`}
+            >
               {group.label}
             </div>
           )}
@@ -92,11 +102,18 @@ export function ChatList({
             <div
               key={chat._id}
               onClick={() => onSwitchChat(chat._id)}
-              className={`chat-item group ${currentChatId === chat._id ? "chat-item-active" : ""
-                } ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+              className={`chat-item group ${
+                currentChatId === chat._id ? "chat-item-active" : ""
+              } ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
             >
               {isValentine && (
-                <img src="/nature.png" alt="Daisy" className="w-5 h-5 object-contain" />
+                <Image
+                  src="/nature.png"
+                  alt="Daisy"
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
               )}
               <span>{chat.title}</span>
               <button

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { isValentinePeriod, getTimeUntilValentineEnd } from "@/app/utils/dateUtils";
+import {
+  isValentinePeriod,
+  getTimeUntilValentineEnd,
+} from "@/app/utils/dateUtils";
 
 interface TopBarProps {
   theme: string | undefined;
@@ -10,8 +13,16 @@ interface TopBarProps {
   onOpenSidebar: () => void;
 }
 
-export function TopBar({ theme, mounted, onToggleTheme, onOpenSidebar }: TopBarProps) {
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number } | null>(null);
+export function TopBar({
+  theme,
+  mounted,
+  onToggleTheme,
+  onOpenSidebar,
+}: TopBarProps) {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+  } | null>(null);
   const isValentine = isValentinePeriod();
 
   useEffect(() => {
@@ -53,8 +64,16 @@ export function TopBar({ theme, mounted, onToggleTheme, onOpenSidebar }: TopBarP
         </button>
         <header className="flex-1 flex justify-between items-center">
           <div>
-            <h1 className={`text-xl font-bold text-[var(--chat-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>Ask Javier</h1>
-            <p className={`text-xs text-[var(--chat-text-muted)] italic ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}>For Aiden Lei Lopez</p>
+            <h1
+              className={`text-xl font-bold text-[var(--chat-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+            >
+              Ask Javier
+            </h1>
+            <p
+              className={`text-xs text-[var(--chat-text-muted)] italic ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
+            >
+              For Aiden Lei Lopez
+            </p>
           </div>
 
           {/* Valentine's Countdown */}
@@ -62,9 +81,11 @@ export function TopBar({ theme, mounted, onToggleTheme, onOpenSidebar }: TopBarP
             <div className="hidden sm:flex items-center gap-2 text-[var(--valentine-accent)] font-[family-name:var(--font-itim)]">
               <span className="text-lg animate-pulse">❤</span>
               {timeLeft ? (
-                <span>{timeLeft.days}d {timeLeft.hours}h until Valentine's Day</span>
+                <span>
+                  {timeLeft.days}d {timeLeft.hours}h until Valentine&apos;s Day
+                </span>
               ) : (
-                <span>Happy Valentine's Day!</span>
+                <span>Happy Valentine&apos;s Day!</span>
               )}
             </div>
           )}

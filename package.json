@@ -3,10 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "check:types": "tsc --noEmit",
+    "check:format": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "NODE_ENV=test vitest run",
+    "test:watch": "NODE_ENV=test vitest",
+    "test:coverage": "NODE_ENV=test vitest run --coverage",
+    "format:all": "pnpm format && pnpm lint:fix && pnpm check:format && pnpm lint",
+    "check": "pnpm format:all && pnpm check:types && pnpm test&& pnpm audit && pnpm build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
@@ -16,21 +25,32 @@
     "@google/generative-ai": "^0.24.1",
     "lucide-react": "^0.563.0",
     "mongodb": "^7.0.0",
-    "next": "16.1.1",
+    "next": "^16.1.6",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-markdown": "^10.1.0"
+    "react-markdown": "^10.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^28.0.0",
+    "msw": "^2.12.10",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5.9.3"
-  }
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"
 }
