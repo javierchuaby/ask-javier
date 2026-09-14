@@ -28,20 +28,16 @@ vi.mock("@/lib/rateLimit", () => ({
   RATE_LIMITS: {},
 }));
 
+const mockGetGenerativeModel = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/prompt", () => ({
+  getSystemPrompt: vi.fn().mockReturnValue("### JAVIER FIRST PERSON PROMPT"),
+}));
+
 // Mock Google Generative AI - use class for constructor
 vi.mock("@google/generative-ai", () => {
-  const mockStream = {
-    [Symbol.asyncIterator]: async function* () {
-      yield { text: () => "Hello" };
-    },
-  };
   return {
     GoogleGenerativeAI: class {
-      getGenerativeModel = vi.fn().mockReturnValue({
-        startChat: vi.fn().mockReturnValue({
-          sendMessageStream: vi.fn().mockResolvedValue({ stream: mockStream }),
-        }),
-      });
+      getGenerativeModel = mockGetGenerativeModel;
     },
   };
 });
@@ -52,6 +48,18 @@ describe("POST /api/chat", () => {
     mockGetTokenChat.mockResolvedValue({ email: "test@example.com" });
     mockCheckRateLimit.mockResolvedValue({ allowed: true });
     mockRecordRequest.mockResolvedValue(undefined);
+
+    const mockStream = {
+      [Symbol.asyncIterator]: async function* () {
+        yield { text: () => "Hi Aiden, love you too!" };
+      },
+    };
+
+    mockGetGenerativeModel.mockReturnValue({
+      startChat: vi.fn().mockReturnValue({
+        sendMessageStream: vi.fn().mockResolvedValue({ stream: mockStream }),
+      }),
+    });
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -146,5 +154,48 @@ describe("POST /api/chat", () => {
       }),
     );
     expect(response.headers.get("Retry-After")).toBe("60");
+  });
+
+  it("passes system instruction from getSystemPrompt() to the generative model", async () => {
+    const request = new NextRequest("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "What is your favorite color?" }],
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe(
+      "text/plain; charset=utf-8",
+    );
+
+    expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining(
+          "### JAVIER FIRST PERSON PROMPT",
+        ),
+      }),
+    );
+  });
+
+  it("successfully handles affectionate messages without regex errors", async () => {
+    const request = new NextRequest("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "I love you and miss you Javier" }],
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+
+    expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining(
+          "### JAVIER FIRST PERSON PROMPT",
+        ),
+      }),
+    );
   });
 });

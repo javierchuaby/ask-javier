@@ -15,7 +15,8 @@
     "test:watch": "NODE_ENV=test vitest",
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "format:all": "pnpm format && pnpm lint:fix && pnpm check:format && pnpm lint",
-    "check": "pnpm format:all && pnpm check:types && pnpm test&& pnpm audit && pnpm build"
+    "check": "pnpm format:all && pnpm check:types && pnpm test&& pnpm audit && pnpm build",
+    "sync-prompt": "node scripts/sync-prompt.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",

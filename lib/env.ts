@@ -22,7 +22,6 @@ const envSchema = z.object({
   ALLOWED_EMAILS: z.string().optional().default(""),
   TITLE_GENERATOR_SYSTEM_PROMPT: z.string().optional().default(""),
   JAVIER_SYSTEM_PROMPT: z.string().optional().default(""),
-  AFFECTION_MIRRORING_INSTRUCTION: z.string().optional().default(""),
 });
 
 export const env = envSchema.parse(process.env);

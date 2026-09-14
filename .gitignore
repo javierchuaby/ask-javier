@@ -32,6 +32,9 @@ yarn-error.log*
 # Env (opt-in: add !.env.example to commit a template)
 .env*
 
+# Private Prompts
+prompts/
+
 # Vercel
 .vercel
 

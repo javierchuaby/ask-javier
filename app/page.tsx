@@ -425,7 +425,8 @@ export default function Home() {
           if (newMessages[streamingIndex]) {
             newMessages[streamingIndex] = {
               ...newMessages[streamingIndex],
-              content: "I can't handle that yet—ask the real Javier.",
+              content:
+                "Something went wrong on my end. Try asking me again in a moment.",
             };
           }
           return newMessages;
@@ -438,7 +439,8 @@ export default function Home() {
         if (newMessages[streamingIndex]) {
           newMessages[streamingIndex] = {
             ...newMessages[streamingIndex],
-            content: "I can't handle that yet—ask the real Javier.",
+            content:
+              "Something went wrong on my end. Try asking me again in a moment.",
           };
         }
         return newMessages;

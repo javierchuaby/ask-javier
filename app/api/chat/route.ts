@@ -5,6 +5,7 @@ import { checkRateLimit, recordRequest, RATE_LIMITS } from "@/lib/rateLimit";
 import { getDb } from "@/lib/mongodb";
 import { AI_MODELS } from "@/lib/constants";
 import { env } from "@/lib/env";
+import { getSystemPrompt } from "@/lib/prompt";
 import { ObjectId } from "mongodb";
 
 // Determine cookie name based on environment (matches NextAuth config)
@@ -75,117 +76,6 @@ async function generateChatTitle(
       error,
     );
   }
-}
-
-/**
- * Detects if the user message contains affection directed at ask-javier
- * @param message - The user's message content
- * @returns The detected affection phrase or null if no affection detected
- */
-function detectAffection(message: string): string | null {
-  if (!message || !message.trim()) {
-    return null;
-  }
-
-  // Normalize the message: lowercase, remove extra spaces
-  const normalized = message.toLowerCase().replace(/\s+/g, " ").trim();
-
-  // Affection keywords to look for
-  const affectionKeywords = [
-    "love",
-    "like",
-    "adore",
-    "appreciate",
-    "cherish",
-    "treasure",
-    "fond of",
-    "care about",
-    "care for",
-    "miss you",
-  ];
-
-  // Bot references (contextual "you" is assumed when affection keywords are present)
-  const botReferences = ["you", "javier", "ask-javier", "ask javier"];
-
-  // Check for affection keywords
-  for (const keyword of affectionKeywords) {
-    // Special handling for keywords that already contain "you" (like "miss you")
-    const keywordContainsYou = keyword.includes(" you");
-
-    if (keywordContainsYou) {
-      // For phrases like "miss you", check if "i miss you" or "miss you" appears
-      const escapedKeyword = keyword
-        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-        .replace(/\s+/g, "\\s+");
-      const patterns = [
-        new RegExp(`i\\s+${escapedKeyword}`, "i"),
-        new RegExp(`${escapedKeyword}`, "i"),
-      ];
-
-      for (const pattern of patterns) {
-        const match = normalized.match(pattern);
-        if (match) {
-          return match[0];
-        }
-      }
-      continue;
-    }
-
-    // For other keywords, check if keyword exists in the message
-    const keywordIndex = normalized.indexOf(keyword);
-    if (keywordIndex === -1) continue;
-
-    // Extract a window around the keyword to check for bot references
-    const start = Math.max(0, keywordIndex - 50);
-    const end = Math.min(normalized.length, keywordIndex + keyword.length + 50);
-    const context = normalized.substring(start, end);
-
-    // Check if any bot reference appears near the affection keyword
-    // Or if the keyword is used in a way that suggests it's directed at the bot
-    // (e.g., "i love u", "love you", "i like you", etc.)
-    const hasBotReference = botReferences.some((ref) => {
-      const refIndex = context.indexOf(ref);
-      // Check if reference is within reasonable distance (30 chars) of the keyword
-      if (refIndex !== -1) {
-        const distance = Math.abs(refIndex - (keywordIndex - start));
-        return distance <= 30;
-      }
-      return false;
-    });
-
-    // Also check for common patterns like "i love u", "i love you", "love you"
-    // These patterns suggest the affection is directed at the bot
-    const escapedKeyword = keyword
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\s+/g, "\\s+");
-    const commonPatterns = [
-      new RegExp(
-        `i\\s+${escapedKeyword}\\s+(u|you|javier|ask[-\\s]?javier)`,
-        "i",
-      ),
-      new RegExp(`${escapedKeyword}\\s+(u|you|javier|ask[-\\s]?javier)`, "i"),
-      new RegExp(`(u|you|javier|ask[-\\s]?javier).*${escapedKeyword}`, "i"),
-    ];
-
-    const matchesPattern = commonPatterns.some((pattern) =>
-      pattern.test(normalized),
-    );
-
-    // If we found an affection keyword with a bot reference or matching a common pattern
-    if (hasBotReference || matchesPattern) {
-      // Extract the core affection phrase
-      // Try to find the most relevant phrase
-      const phraseMatch = normalized.match(
-        new RegExp(`(i\\s+)?${escapedKeyword}\\s+(u|you)`, "i"),
-      );
-      if (phraseMatch) {
-        return phraseMatch[0];
-      }
-      return keyword;
-    }
-  }
-
-  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -290,9 +180,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Detect affection in the last user message
-    const detectedAffection = detectAffection(lastMessage.content);
-
     // Check rate limit before making API call
     const modelName = AI_MODELS.CHAT;
     const rateLimitResult = await checkRateLimit(
@@ -320,7 +207,7 @@ export async function POST(request: NextRequest) {
     await recordRequest(modelName);
 
     // Build base system instruction
-    let systemInstruction = env.JAVIER_SYSTEM_PROMPT || "";
+    let systemInstruction = getSystemPrompt();
 
     // Add current date and time to system instruction
     const now = new Date();
@@ -339,20 +226,6 @@ export async function POST(request: NextRequest) {
     });
 
     systemInstruction += `\n\n### CURRENT DATE AND TIME\n- Today's date is: ${currentDate}\n- Current time is: ${currentTime}\n- When answering questions about dates, times, or current events, use this information.`;
-
-    // Add affection mirroring instruction if affection is detected
-    if (detectedAffection) {
-      const affectionInstruction = env.AFFECTION_MIRRORING_INSTRUCTION || "";
-      if (affectionInstruction) {
-        const formattedInstruction = affectionInstruction.replace(/\\n/g, "\n");
-        systemInstruction +=
-          "\n" +
-          formattedInstruction.replace(
-            /{AFFECTION_PHRASE}/g,
-            detectedAffection,
-          );
-      }
-    }
 
     const model = genAI.getGenerativeModel({
       model: modelName,
@@ -435,7 +308,7 @@ export async function POST(request: NextRequest) {
           // If no content was received, send an error message
           if (!hasContent) {
             const errorText = encoder.encode(
-              "I can't handle that yet—ask the real Javier.",
+              "Something went wrong on my end. Try asking me again in a moment.",
             );
             controller.enqueue(errorText);
           }
@@ -443,7 +316,7 @@ export async function POST(request: NextRequest) {
           controller.close();
         } catch {
           const errorText = encoder.encode(
-            "I can't handle that yet—ask the real Javier.",
+            "Something went wrong on my end. Try asking me again in a moment.",
           );
           controller.enqueue(errorText);
           controller.close();
@@ -483,7 +356,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { error: "Ask the real Javier, the system is down." },
+      { error: "Something went wrong on my end. The system is down." },
       { status: 500 },
     );
   }
