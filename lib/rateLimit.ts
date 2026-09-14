@@ -7,8 +7,8 @@ let indexesInitialized = false;
 // Rate limit configurations for each model
 export const RATE_LIMITS = {
   [AI_MODELS.CHAT]: {
-    perMinute: 9,
-    perDay: 19,
+    perMinute: 14,
+    perDay: 495,
   },
   [AI_MODELS.TITLE]: {
     perMinute: 4,

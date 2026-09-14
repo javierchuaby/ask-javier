@@ -186,8 +186,8 @@ describe("rateLimit", () => {
     it("exports correct rate limit config for CHAT and TITLE models", () => {
       expect(RATE_LIMITS).toBeDefined();
       expect(RATE_LIMITS[AI_MODELS.CHAT]).toEqual({
-        perMinute: 9,
-        perDay: 19,
+        perMinute: 14,
+        perDay: 495,
       });
       expect(RATE_LIMITS[AI_MODELS.TITLE]).toEqual({
         perMinute: 4,
