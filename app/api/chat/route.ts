@@ -40,7 +40,7 @@ async function generateChatTitle(
     }
 
     await recordRequest(modelName);
-    
+
     const { text } = await generateText({
       model: google(modelName),
       system: env.TITLE_GENERATOR_SYSTEM_PROMPT ||
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
             { _id: objectId },
             { $set: { title: tempTitle } },
           );
-          
+
           generateChatTitle(lastMessage.content, chatId).catch((error) => {
             console.error(
               `[POST /api/chat] Error in generateChatTitle promise for chat ${chatId}:`,
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     });
 
     systemInstruction += `\n\n### CURRENT DATE\n- Today's date is: ${currentDate}\n- The current time is: ${currentTime}\n- When answering questions about dates or current events, use this information.`;
-    
+
     // Remap user/bot roles for AI SDK if necessary (usually AI SDK expects user, assistant, system)
     const sdkMessages = messages.map((m: any) => ({
       role: m.role === 'bot' ? 'assistant' : m.role,
@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
       model: google(modelName),
       messages: sdkMessages,
       system: systemInstruction,
+      maxSteps: 3,
       tools: {
         search_memories: {
           description: "Search for past Telegram conversations. Use this when the user asks about past events, memories, inside jokes, or shared experiences.",
