@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
+import { useChat } from "ai/react";
 import { useChatCache } from "@/app/hooks/useChatCache";
 import { authenticatedFetch } from "@/app/utils/api";
 import { ChatMessage, Chat } from "@/app/types/chat";
@@ -14,9 +15,6 @@ import { LogoutModal } from "@/app/components/LogoutModal";
 import { formatRetryTime, isValentinePeriod } from "@/app/utils/dateUtils";
 
 export default function Home() {
-  const [input, setInput] = useState<string>("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [loadingChats, setLoadingChats] = useState<boolean>(true);
@@ -32,7 +30,24 @@ export default function Home() {
 
   const isValentine = isValentinePeriod();
 
-  // Countdown for rate limit banner (stops at 0; user dismisses via Retry)
+  // useChat integration
+  const { messages, setMessages, input, setInput, append, isLoading } = useChat({
+    api: "/api/chat",
+    onError: (error) => {
+      // Assuming 429 errors contain 'retryAfter' in the message or handle gracefully
+      if (error.message.includes("429") || error.message.includes("rate limit")) {
+        setRateLimitRetryIn(60); // Default to 60s if not parsed
+      }
+    },
+    onFinish: () => {
+      if (currentChatId) {
+        chatCache.invalidate(currentChatId);
+        updateChatInList(currentChatId, { messageCountIncrement: 2 });
+      }
+    },
+  });
+
+  // Countdown for rate limit banner
   useEffect(() => {
     if (rateLimitRetryIn === null || rateLimitRetryIn <= 0) return;
     const id = setInterval(() => {
@@ -106,11 +121,10 @@ export default function Home() {
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      // Reset height to auto to get the correct scrollHeight
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      const lineHeight = 24; // Approximate line height in pixels
-      const maxHeight = lineHeight * 10; // 10 lines max
+      const lineHeight = 24; 
+      const maxHeight = lineHeight * 10; 
 
       if (scrollHeight <= maxHeight) {
         textareaRef.current.style.height = `${Math.max(scrollHeight, 24)}px`;
@@ -128,14 +142,13 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setChats(data);
-        // If no current chat and chats exist, load the most recent one
         if (!currentChatId && data.length > 0) {
           setCurrentChatId(data[0]._id);
           loadChatMessages(data[0]._id);
         }
       }
     } catch {
-      // Error is already handled by authenticatedFetch (redirects on 401)
+      // Error is already handled by authenticatedFetch
     } finally {
       setLoadingChats(false);
     }
@@ -147,13 +160,8 @@ export default function Home() {
   ) => {
     setChats((prevChats) => {
       const chatIndex = prevChats.findIndex((chat) => chat._id === chatId);
+      if (chatIndex === -1) return prevChats;
 
-      if (chatIndex === -1) {
-        // Chat not found in list, return unchanged
-        return prevChats;
-      }
-
-      // Create updated chat object
       const chat = prevChats[chatIndex];
       const messageCountIncrement = updates?.messageCountIncrement ?? 1;
       const updatedChat: Chat = {
@@ -163,31 +171,29 @@ export default function Home() {
         ...(updates?.title && { title: updates.title }),
       };
 
-      // Remove chat from current position and add to top
       const newChats = [...prevChats];
       newChats.splice(chatIndex, 1);
-
-      // Insert at the beginning
       newChats.unshift(updatedChat);
 
-      // Re-sort by updatedAt descending to ensure proper order
       return newChats.sort((a, b) => {
-        const dateA = new Date(a.updatedAt).getTime();
-        const dateB = new Date(b.updatedAt).getTime();
-        return dateB - dateA;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       });
     });
   };
 
   const loadChatMessages = async (chatId: string) => {
-    // Check cache first
     const cachedMessages = chatCache.get(chatId);
     if (cachedMessages) {
-      setMessages(cachedMessages);
+      setMessages(
+        cachedMessages.map((msg, idx) => ({
+          id: `msg-${idx}`,
+          role: msg.role === "bot" ? "assistant" : "user",
+          content: msg.content,
+        }))
+      );
       return;
     }
 
-    // Cache miss - fetch from API
     try {
       const response = await authenticatedFetch(`/api/chats/${chatId}`);
       if (response.ok) {
@@ -198,18 +204,21 @@ export default function Home() {
             content: msg.content,
           }),
         );
-        setMessages(formattedMessages);
-        // Store in cache
         chatCache.set(chatId, formattedMessages);
+        setMessages(
+          formattedMessages.map((msg, idx) => ({
+            id: `msg-${idx}`,
+            role: msg.role === "bot" ? "assistant" : "user",
+            content: msg.content,
+          }))
+        );
       }
     } catch {
-      // Error is already handled by authenticatedFetch (redirects on 401)
+      // Handled
     }
   };
 
   const createNewChat = () => {
-    // Clear the view without creating a chat
-    // Chat will be created automatically when first message is sent
     setCurrentChatId(null);
     setMessages([]);
   };
@@ -217,17 +226,23 @@ export default function Home() {
   const switchChat = async (chatId: string) => {
     if (chatId === currentChatId) return;
     setCurrentChatId(chatId);
+    
+    // Clear current messages while loading
+    setMessages([]);
 
-    // Check cache for instant loading
     const cachedMessages = chatCache.get(chatId);
     if (cachedMessages) {
-      setMessages(cachedMessages);
+      setMessages(
+        cachedMessages.map((msg, idx) => ({
+          id: `msg-${idx}`,
+          role: msg.role === "bot" ? "assistant" : "user",
+          content: msg.content,
+        }))
+      );
     } else {
-      // Cache miss - load from API
       await loadChatMessages(chatId);
     }
 
-    // Close sidebar on mobile after switching
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
@@ -240,11 +255,9 @@ export default function Home() {
         method: "DELETE",
       });
       if (response.ok) {
-        // Invalidate cache for deleted chat
         chatCache.invalidate(chatId);
         setChats((prev) => prev.filter((chat) => chat._id !== chatId));
         if (currentChatId === chatId) {
-          // If deleted chat was active, switch to another or create new
           const remainingChats = chats.filter((chat) => chat._id !== chatId);
           if (remainingChats.length > 0) {
             setCurrentChatId(remainingChats[0]._id);
@@ -256,27 +269,23 @@ export default function Home() {
         }
       }
     } catch {
-      // Error is already handled by authenticatedFetch (redirects on 401)
+      // Handled
     }
   };
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Add length validation on frontend
-    const MAX_INPUT_LENGTH = 100000; // Match backend limit
+    const MAX_INPUT_LENGTH = 100000;
     if (input.length > MAX_INPUT_LENGTH) {
-      alert(
-        `Message too long. Maximum length is ${MAX_INPUT_LENGTH} characters.`,
-      );
+      alert(`Message too long. Maximum length is ${MAX_INPUT_LENGTH} characters.`);
       return;
     }
 
-    // Ensure we have a chat
     let chatId = currentChatId;
     let isFirstMessage = false;
+
     if (!chatId) {
-      // Create new chat if none exists
       isFirstMessage = true;
       try {
         const response = await authenticatedFetch("/api/chats", {
@@ -293,164 +302,59 @@ export default function Home() {
           return;
         }
       } catch {
-        // Error is already handled by authenticatedFetch (redirects on 401)
         return;
       }
     } else {
-      // Check if this is the first message in an existing chat
       const currentChat = chats.find((chat) => chat._id === chatId);
       isFirstMessage = currentChat ? currentChat.messageCount === 0 : false;
     }
 
-    const userMsg: ChatMessage = { role: "user", content: input };
-    const updatedMessages = [...messages, userMsg];
-
-    // Create streaming message immediately
-    const streamingMsg: ChatMessage = { role: "bot", content: "" };
-
-    // Add both user message and empty streaming message
-    setMessages([...updatedMessages, streamingMsg]);
+    const userInput = input;
     setInput("");
-    setIsLoading(true);
 
-    const streamingIndex = updatedMessages.length;
-
-    try {
-      const response = await authenticatedFetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages, chatId }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          const data = await response.json().catch(() => ({}));
-          const retryAfter = (data.retryAfter as number) ?? 60;
-          setRateLimitRetryIn(retryAfter);
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            if (newMessages[streamingIndex]) {
-              newMessages[streamingIndex] = {
-                ...newMessages[streamingIndex],
-                content: `I'm at capacity right now—please try again in about ${formatRetryTime(retryAfter)}.`,
-              };
-            }
-            return newMessages;
-          });
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      if (!response.body) {
-        throw new Error("No response body");
-      }
-
-      // Read the stream
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          break;
-        }
-
-        // Decode the chunk and append to accumulated text
-        const chunk = decoder.decode(value, { stream: true });
-        accumulatedText += chunk;
-
-        // Update the streaming message content
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          if (newMessages[streamingIndex]) {
-            newMessages[streamingIndex] = {
-              ...newMessages[streamingIndex],
-              content: accumulatedText,
-            };
+    // Use AI SDK append to start streaming. Pass chatId dynamically so the
+    // backend always receives the correct chatId, even for newly-created chats.
+    append({
+      role: 'user',
+      content: userInput,
+    }, {
+      body: { chatId },
+    });
+    
+    if (chatId && isFirstMessage) {
+      setTimeout(async () => {
+        try {
+          const response = await authenticatedFetch(`/api/chats/${chatId}`);
+          if (response.ok) {
+            const updatedChat = await response.json();
+            setChats((prevChats) => {
+              const chatIndex = prevChats.findIndex(
+                (chat) => chat._id === chatId,
+              );
+              if (chatIndex !== -1) {
+                const newChats = [...prevChats];
+                newChats[chatIndex] = {
+                  _id: updatedChat._id,
+                  title: updatedChat.title,
+                  createdAt: updatedChat.createdAt,
+                  updatedAt: updatedChat.updatedAt,
+                  messageCount: updatedChat.messageCount || 0,
+                };
+                return newChats.sort((a, b) => {
+                  return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                });
+              }
+              return prevChats;
+            });
           }
-          return newMessages;
-        });
-      }
-
-      // Invalidate cache to refresh chat list and message count
-      if (chatId) {
-        chatCache.invalidate(chatId);
-        updateChatInList(chatId, { messageCountIncrement: 2 });
-      }
-
-      // If this is the first message, fetch updated chat title after AI generation
-      if (chatId && isFirstMessage) {
-        // Wait a bit for the title to be generated, then fetch updated chat
-        setTimeout(async () => {
-          try {
-            const response = await authenticatedFetch(`/api/chats/${chatId}`);
-            if (response.ok) {
-              const updatedChat = await response.json();
-              setChats((prevChats) => {
-                const chatIndex = prevChats.findIndex(
-                  (chat) => chat._id === chatId,
-                );
-                if (chatIndex !== -1) {
-                  const newChats = [...prevChats];
-                  newChats[chatIndex] = {
-                    _id: updatedChat._id,
-                    title: updatedChat.title,
-                    createdAt: updatedChat.createdAt,
-                    updatedAt: updatedChat.updatedAt,
-                    messageCount: updatedChat.messageCount || 0,
-                  };
-                  // Re-sort by updatedAt descending
-                  return newChats.sort((a, b) => {
-                    const dateA = new Date(a.updatedAt).getTime();
-                    const dateB = new Date(b.updatedAt).getTime();
-                    return dateB - dateA;
-                  });
-                }
-                return prevChats;
-              });
-            }
-          } catch (error) {
-            console.error("Failed to fetch updated chat title:", error);
-          }
-        }, 2000); // Wait 2 seconds for AI title generation
-      }
-
-      if (accumulatedText.trim().length === 0) {
-        // Handle empty response
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          if (newMessages[streamingIndex]) {
-            newMessages[streamingIndex] = {
-              ...newMessages[streamingIndex],
-              content:
-                "Something went wrong on my end. Try asking me again in a moment.",
-            };
-          }
-          return newMessages;
-        });
-      }
-    } catch {
-      // Update the streaming message with error message
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        if (newMessages[streamingIndex]) {
-          newMessages[streamingIndex] = {
-            ...newMessages[streamingIndex],
-            content:
-              "Something went wrong on my end. Try asking me again in a moment.",
-          };
+        } catch (error) {
+          console.error("Failed to fetch updated chat title:", error);
         }
-        return newMessages;
-      });
-    } finally {
-      setIsLoading(false);
+      }, 3000); 
     }
   };
 
-  // Handle escape key to close sidebar on mobile
+  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isSidebarOpen && window.innerWidth < 768) {
@@ -460,6 +364,12 @@ export default function Home() {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isSidebarOpen]);
+
+  // Map ai-sdk messages to the format expected by MessageList component
+  const mappedMessages: ChatMessage[] = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'bot',
+    content: m.content || ''
+  }));
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)]">
@@ -488,7 +398,7 @@ export default function Home() {
         />
 
         <MessageList
-          messages={messages}
+          messages={mappedMessages}
           isLoading={isLoading}
           messagesEndRef={messagesEndRef}
         />
@@ -509,9 +419,6 @@ export default function Home() {
         onClose={() => setShowLogoutModal(false)}
         onConfirm={() => signOut()}
       />
-
-      {/* Valentine's Decorations (Hidden on mobile) */}
-      {isValentine && mounted && <></>}
     </div>
   );
 }

@@ -20,11 +20,14 @@
     "ingest": "tsx scripts/ingest-chats.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.52",
+    "@ai-sdk/react": "^0.0.12",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
     "@google/generative-ai": "^0.24.1",
+    "ai": "^3.4.33",
     "lucide-react": "^0.563.0",
     "mongodb": "^7.0.0",
     "next": "^16.3.5",
