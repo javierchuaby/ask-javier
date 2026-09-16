@@ -30,12 +30,12 @@ Create a `.env.local` file in the root directory with the following variables:
 #### Personalization & Privacy
 | Variable                     | Description |
 | ---------------------------- | ----------- |
-| `NEXT_PUBLIC_BOT_NAME`       | Name of the assistant (e.g. `Javier`) |
-| `NEXT_PUBLIC_USER_NAME`      | First name of the user (e.g. `Aiden`) |
+| `NEXT_PUBLIC_BOT_NAME`       | Name of the assistant (e.g. `BotName`) |
+| `NEXT_PUBLIC_USER_NAME`      | First name of the user (e.g. `UserName`) |
 | `NEXT_PUBLIC_USER_FULL_NAME` | Full name of the user |
 | `BOT_RELATIONSHIP`           | Relationship context (e.g. `girlfriend`) |
-| `TELEGRAM_TARGET_CHAT`       | The phone number or chat ID to export history from (e.g. `+6591195880`) |
-| `REDACT_NAMES`               | Comma-separated list of names/places to scrub from chat history to protect privacy (e.g. `javier,aiden,Singapore`) |
+| `TELEGRAM_TARGET_CHAT`       | The phone number or chat ID to export history from (e.g. `+1234567890`) |
+| `REDACT_NAMES`               | Comma-separated list of names/places to scrub from chat history to protect privacy (e.g. `john,doe,City`) |
 
 ## Data Ingestion Pipeline
 
