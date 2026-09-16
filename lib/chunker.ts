@@ -34,46 +34,6 @@ export const CHUNK_CONFIG = {
 };
 
 /**
- * Redacts Personally Identifiable Information (PII) like phone numbers, emails, and names.
- */
-export function redactPII(text: string): string {
-  if (!text) return text;
-
-  // 1. Redact Emails
-  let scrubbed = text.replace(
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-    "[EMAIL]",
-  );
-
-  // 2. Redact Phone Numbers (international and local variants)
-  // Matches generic formats with at least 8 digits
-  scrubbed = scrubbed.replace(
-    /(?:\+?\d{1,3}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g,
-    (match) => {
-      const digitCount = (match.match(/\d/g) || []).length;
-      if (digitCount >= 8) {
-        return "[PHONE]";
-      }
-      return match;
-    },
-  );
-
-  // 3. Redact common variations of the real names
-  const namesToRedact = env.REDACT_NAMES
-    ? env.REDACT_NAMES.split(",")
-        .map((n) => n.trim())
-        .filter(Boolean)
-    : ["user", "bot"];
-
-  for (const name of namesToRedact) {
-    const regex = new RegExp(`\\b${name}\\b`, "gi");
-    scrubbed = scrubbed.replace(regex, "[NAME]");
-  }
-
-  return scrubbed;
-}
-
-/**
  * Parses, cleans, and deduplicates raw messages from Telegram export.
  */
 export function processRawMessages(
@@ -106,7 +66,7 @@ export function processRawMessages(
       map.set(m.id, {
         id: m.id,
         date: new Date(m.date),
-        text: redactPII(text),
+        text: text,
         sender: m.out ? "bot" : "user",
       });
     }

@@ -6,7 +6,6 @@ import {
   formatChunkForEmbedding,
   RawTelegramMessage,
   CleanedMessage,
-  redactPII,
 } from "./chunker";
 
 describe("lib/chunker", () => {
@@ -92,36 +91,6 @@ describe("lib/chunker", () => {
     expect(cleaned[0].text).toBe("[Photo]");
     expect(cleaned[1].text).toBe("[Document/Video/Voice]");
     expect(cleaned[2].text).toBe("[Location]");
-  });
-
-  describe("redactPII", () => {
-    it("redacts email addresses", () => {
-      expect(redactPII("Contact me at test@example.com please.")).toBe(
-        "Contact me at [EMAIL] please.",
-      );
-      expect(redactPII("Email johndoe@example.com")).toBe("Email [EMAIL]");
-    });
-
-    it("redacts phone numbers", () => {
-      expect(redactPII("Call me at +65 9119 5880")).toBe("Call me at [PHONE]");
-      expect(redactPII("My number is 91195880")).toBe("My number is [PHONE]");
-      expect(redactPII("Dial 1800-111-2222")).toBe("Dial [PHONE]");
-    });
-
-    it("redacts specific names", () => {
-      expect(redactPII("I love you bot")).toBe("I love you [NAME]");
-      expect(redactPII("Hi user, how are you?")).toBe(
-        "Hi [NAME], how are you?",
-      );
-      expect(redactPII("User is here")).toBe("[NAME] is here");
-    });
-
-    it("does not redact normal text", () => {
-      expect(redactPII("I love you 3000")).toBe("I love you 3000"); // 4 digits, not 8
-      expect(redactPII("Let's go eat chicken rice")).toBe(
-        "Let's go eat chicken rice",
-      );
-    });
   });
 
   it("groups messages into sessions by 1-hour inactivity gap", () => {

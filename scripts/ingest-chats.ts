@@ -311,9 +311,13 @@ Return ONLY the summary, no other text.`;
   console.log("==================================================");
   console.log("  📌 Next Step: MongoDB Atlas Search Indexes (Hybrid + Vector)");
   console.log("==================================================");
-  console.log("Because this app uses $rankFusion, you must create TWO separate indexes in Atlas:");
+  console.log(
+    "Because this app uses $rankFusion, you must create TWO separate indexes in Atlas:",
+  );
   console.log("\n1️⃣ ATLAS SEARCH INDEX (Text Search)");
-  console.log("In MongoDB Atlas UI -> Atlas Search -> Create Search Index (Visual or JSON Editor):");
+  console.log(
+    "In MongoDB Atlas UI -> Atlas Search -> Create Search Index (Visual or JSON Editor):",
+  );
   console.log("• Database   : ask-javier-db");
   console.log("• Collection : chat_history");
   console.log("• Index Name : hybrid_index");
@@ -326,28 +330,30 @@ Return ONLY the summary, no other text.`;
           fields: {
             dialogueText: {
               analyzer: "lucene.standard",
-              type: "string"
+              type: "string",
             },
             summary: {
               analyzer: "lucene.standard",
-              type: "string"
+              type: "string",
             },
             text: {
               analyzer: "lucene.standard",
-              type: "string"
+              type: "string",
             },
             userId: {
-              type: "token"
-            }
-          }
-        }
+              type: "token",
+            },
+          },
+        },
       },
       null,
       2,
     ),
   );
   console.log("\n2️⃣ ATLAS VECTOR SEARCH INDEX (Vector Search)");
-  console.log("In MongoDB Atlas UI -> Atlas Search -> Create Vector Search Index (JSON Editor):");
+  console.log(
+    "In MongoDB Atlas UI -> Atlas Search -> Create Vector Search Index (JSON Editor):",
+  );
   console.log("• Database   : ask-javier-db");
   console.log("• Collection : chat_history");
   console.log("• Index Name : vector_index");
@@ -360,21 +366,21 @@ Return ONLY the summary, no other text.`;
             numDimensions: 1024,
             path: "embedding",
             similarity: "cosine",
-            type: "vector"
+            type: "vector",
           },
           {
             path: "userId",
-            type: "filter"
+            type: "filter",
           },
           {
             path: "chunkId",
-            type: "filter"
+            type: "filter",
           },
           {
             path: "startDate",
-            type: "filter"
-          }
-        ]
+            type: "filter",
+          },
+        ],
       },
       null,
       2,

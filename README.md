@@ -9,6 +9,7 @@ This is a personal project I built to learn and make something special for my gi
 Create a `.env.local` file in the root directory with the following variables:
 
 #### Core Authentication & Database
+
 | Variable               | Description                                 |
 | ---------------------- | ------------------------------------------- |
 | `GOOGLE_GENAI_API_KEY` | Google Generative AI API key                |
@@ -20,26 +21,27 @@ Create a `.env.local` file in the root directory with the following variables:
 | `ALLOWED_EMAILS`       | Comma-separated whitelisted emails          |
 
 #### SoCLaaS RAG (Retrieval-Augmented Generation)
-| Variable                  | Default                                 | Description |
-| ------------------------- | --------------------------------------- | ----------- |
-| `SOCLAAS_BASE_URL`        | `https://soclaas-api.comp.nus.edu.sg/v1`| NUS AI Gateway Endpoint |
-| `SOCLAAS_API_KEY`         | (Required for RAG)                      | SoCLaaS API Key |
-| `SOCLAAS_MODEL`           | `llama3.1:8b`                           | Model used for conversation chunk summarization |
-| `SOCLAAS_EMBEDDING_MODEL` | `bge-m3`                                | Model used for vector embeddings (1024 dimensions) |
+
+| Variable                  | Default                                  | Description                                        |
+| ------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `SOCLAAS_BASE_URL`        | `https://soclaas-api.comp.nus.edu.sg/v1` | NUS AI Gateway Endpoint                            |
+| `SOCLAAS_API_KEY`         | (Required for RAG)                       | SoCLaaS API Key                                    |
+| `SOCLAAS_MODEL`           | `llama3.1:8b`                            | Model used for conversation chunk summarization    |
+| `SOCLAAS_EMBEDDING_MODEL` | `bge-m3`                                 | Model used for vector embeddings (1024 dimensions) |
 
 #### Personalization & Privacy
-| Variable                     | Description |
-| ---------------------------- | ----------- |
-| `NEXT_PUBLIC_BOT_NAME`       | Name of the assistant (e.g. `BotName`) |
-| `NEXT_PUBLIC_USER_NAME`      | First name of the user (e.g. `UserName`) |
-| `NEXT_PUBLIC_USER_FULL_NAME` | Full name of the user |
-| `BOT_RELATIONSHIP`           | Relationship context (e.g. `girlfriend`) |
+
+| Variable                     | Description                                                             |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `NEXT_PUBLIC_BOT_NAME`       | Name of the assistant (e.g. `BotName`)                                  |
+| `NEXT_PUBLIC_USER_NAME`      | First name of the user (e.g. `UserName`)                                |
+| `NEXT_PUBLIC_USER_FULL_NAME` | Full name of the user                                                   |
+| `BOT_RELATIONSHIP`           | Relationship context (e.g. `girlfriend`)                                |
 | `TELEGRAM_TARGET_CHAT`       | The phone number or chat ID to export history from (e.g. `+1234567890`) |
-| `REDACT_NAMES`               | Comma-separated list of names/places to scrub from chat history to protect privacy (e.g. `john,doe,City`) |
 
 ## Data Ingestion Pipeline
 
-To populate the assistant's memory with your past Telegram chat history, run the ingestion pipeline. This script will download the history, redact sensitive names, summarize the chunks, generate embeddings, and upload them to MongoDB:
+To populate the assistant's memory with your past Telegram chat history, run the ingestion pipeline. This script will download the history, summarize the chunks, generate embeddings, and upload them to MongoDB:
 
 ```bash
 pnpm ingest
@@ -90,4 +92,5 @@ Because the RAG pipeline uses MongoDB's `$rankFusion` to combine semantic and ke
 ```bash
 pnpm dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000)

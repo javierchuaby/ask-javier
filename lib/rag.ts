@@ -158,8 +158,6 @@ export async function searchSimilarChats(
       (r) => r.score !== undefined && r.score >= 0.015,
     );
 
-
-
     return results;
   } catch (error) {
     console.error("[searchSimilarChats] Hybrid search query failed:", error);

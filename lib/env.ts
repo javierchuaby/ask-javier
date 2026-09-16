@@ -29,7 +29,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_USER_FULL_NAME: z.string().optional().default("User"),
   BOT_RELATIONSHIP: z.string().optional().default("friend"),
   TELEGRAM_TARGET_CHAT: z.string().optional().default(""),
-  REDACT_NAMES: z.string().optional().default(""),
+
   TELEGRAM_CLI_PATH: z
     .string()
     .optional()
