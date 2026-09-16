@@ -158,14 +158,7 @@ export async function searchSimilarChats(
       (r) => r.score !== undefined && r.score >= 0.015,
     );
 
-    console.log(
-      "[searchSimilarChats] Retrived results length:",
-      results.length,
-    );
-    console.log(
-      "[searchSimilarChats] Results payload:",
-      JSON.stringify(results, null, 2),
-    );
+
 
     return results;
   } catch (error) {
