@@ -473,22 +473,21 @@ def sort_scores(scores):
 def test_sort_with_duplicate_scores():
     """Test sorting when multiple items have same score."""
     scores = [
-        {'name': 'Alice', 'score': 100},
         {'name': 'Bob', 'score': 100},
+        {'name': 'Alice', 'score': 100},
         {'name': 'Charlie', 'score': 90},
     ]
 
     result = sort_scores(scores)
 
-    # The bug: order is non-deterministic for duplicates
-    # Run this test multiple times, it should be consistent
-    assert result[0]['score'] == 100
-    assert result[1]['score'] == 100
-    assert result[2]['score'] == 90
+    # The bug: ties are not sorted alphabetically by name
+    # The result should correctly order Alice before Bob for score=100
+    assert result[0]['name'] == 'Alice'
+    assert result[1]['name'] == 'Bob'
 
-# Verify: Run test 10 times → fails with inconsistent ordering
+# Verify: Run test → fails because name tie-breaker isn't applied
 
-# 2. Now fix with stable sort
+# 2. Now fix with name tie-breaker
 def sort_scores(scores):
     """Sort by score descending, then name ascending for ties."""
     return sorted(scores, key=lambda x: (-x['score'], x['name']))

@@ -160,20 +160,24 @@ async function main() {
   const db = await getDb();
   const collection = db.collection("chat_history");
 
-  const existingIds = (await collection.distinct("chunkId")) as string[];
+  // Backfill existing documents to ensure they are scoped to targetChat
+  await collection.updateMany(
+    { userId: { $exists: false } },
+    { $set: { userId: targetChat } }
+  );
+
+  const existingIds = (await collection.distinct("chunkId", { userId: targetChat })) as string[];
   const existingSet = new Set(existingIds);
   console.log(
     `• Found ${existingSet.size} previously ingested chunks in MongoDB.`,
   );
 
-  const allChunkIds = new Set(allChunks.map((c) => c.chunkId));
-  const chunksToDelete = existingIds.filter((id) => !allChunkIds.has(id));
-
-  if (chunksToDelete.length > 0) {
-    console.log(
-      `• Removing ${chunksToDelete.length} stale chunks from MongoDB...`,
-    );
-    await collection.deleteMany({ chunkId: { $in: chunksToDelete } });
+  let chunksToDelete: string[] = [];
+  if (!limit) {
+    const allChunkIds = new Set(allChunks.map((c) => c.chunkId));
+    chunksToDelete = existingIds.filter((id) => !allChunkIds.has(id));
+  } else {
+    console.log(`• Skipping stale chunk cleanup because --limit is applied.`);
   }
 
   let pendingChunks = allChunks.filter((c) => !existingSet.has(c.chunkId));
@@ -187,11 +191,13 @@ async function main() {
     pendingChunks = pendingChunks.slice(-limit);
   }
 
-  if (pendingChunks.length === 0) {
+  if (pendingChunks.length === 0 && chunksToDelete.length === 0) {
     console.log(
       "\n✨ All chunks are already up-to-date in MongoDB! Nothing to do.",
     );
     process.exit(0);
+  } else if (pendingChunks.length === 0) {
+    console.log("\n✨ No new chunks to ingest, skipping to cleanup.");
   }
 
   // Step 5 & 6: Micro-Batch Summarization, Embedding & Ingestion
@@ -305,6 +311,7 @@ Return ONLY the summary, no other text.`;
     const writeOps = chunkBatch.map((chunk, bIdx) => {
       const doc = {
         chunkId: chunk.chunkId,
+        userId: targetChat,
         summary: summaries[bIdx],
         text: chunk.dialogueText,
         formattedEmbeddingText: formattedTexts[bIdx],
@@ -319,7 +326,7 @@ Return ONLY the summary, no other text.`;
 
       return {
         updateOne: {
-          filter: { chunkId: chunk.chunkId },
+          filter: { chunkId: chunk.chunkId, userId: targetChat },
           update: { $set: doc },
           upsert: true,
         },
@@ -333,6 +340,11 @@ Return ONLY the summary, no other text.`;
     process.stdout.write(
       `\r• Saved batch: [${completedCount}/${pendingChunks.length}] chunks completed...`,
     );
+  }
+
+  if (chunksToDelete.length > 0) {
+    console.log(`\n🧹 Cleaning up ${chunksToDelete.length} stale chunks from MongoDB...`);
+    await collection.deleteMany({ chunkId: { $in: chunksToDelete }, userId: targetChat });
   }
 
   console.log("\n\n🎉 Ingestion finished successfully!");

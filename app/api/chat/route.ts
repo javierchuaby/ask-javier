@@ -70,7 +70,21 @@ async function resolveSearchQuery(
 
   // Otherwise, generate a standalone query using a fast model or lightweight prompt
   try {
-    const model = genAI.getGenerativeModel({ model: AI_MODELS.TITLE });
+    const modelName = AI_MODELS.TITLE;
+    const rateLimitResult = await checkRateLimit(
+      modelName,
+      RATE_LIMITS[modelName],
+    );
+
+    if (!rateLimitResult.allowed) {
+      console.warn("Rate limit exceeded for query synthesis, falling back.");
+      const lastContext = recentHistory[recentHistory.length - 1]?.content || "";
+      return `${lastContext} ${currentQuery}`.trim();
+    }
+
+    await recordRequest(modelName);
+
+    const model = genAI.getGenerativeModel({ model: modelName });
     const synthesisPrompt = `Given the following conversation exchange, rewrite the user's latest message into a self-contained search query for a chat archive. Resolve all pronouns (it, that, he, she, there) to the specific subjects mentioned previously. Do not answer the question; only output the search query.
 
 Previous exchange:

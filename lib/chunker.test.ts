@@ -7,6 +7,7 @@ import {
   RawTelegramMessage,
   CleanedMessage,
 } from "./chunker";
+import { env } from "./env";
 
 describe("lib/chunker", () => {
   it("processes, filters, deduplicates and sorts raw messages", () => {
@@ -172,10 +173,13 @@ describe("lib/chunker", () => {
       "Discussing morning greeting",
       chunk,
     );
+    const botName = env.NEXT_PUBLIC_BOT_NAME || "Bot";
+    const userName = env.NEXT_PUBLIC_USER_NAME || "User";
+
     expect(formatted).toContain("[Summary]: Discussing morning greeting");
     expect(formatted).toContain(
       "[Time]: 2024-01-01 10:00:00 to 2024-01-01 10:05:00",
     );
-    expect(formatted).toContain("[Dialogue]:\n[Bot] Hello\n[User] Hi");
+    expect(formatted).toContain(`[Dialogue]:\n[${botName}] Hello\n[${userName}] Hi`);
   });
 });
