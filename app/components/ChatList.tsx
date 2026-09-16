@@ -73,7 +73,8 @@ export function ChatList({
         <p
           className={`text-[var(--chat-text-muted)] text-sm ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
         >
-          Begin chatting with Javier to get started
+          Begin chatting with {process.env.NEXT_PUBLIC_BOT_NAME || "Bot"} to get
+          started
         </p>
       </div>
     );

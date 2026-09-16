@@ -3,12 +3,6 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { env } from "@/lib/env";
 
-// Determine cookie name based on environment (matches NextAuth config)
-const isProduction = env.NODE_ENV === "production";
-const cookieName = isProduction
-  ? "__Secure-next-auth.session-token"
-  : "next-auth.session-token";
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -27,7 +21,6 @@ export async function proxy(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
-    cookieName: cookieName,
   });
 
   // Protect all other routes

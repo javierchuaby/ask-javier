@@ -155,7 +155,7 @@ export function Sidebar({
                   <span
                     className={`text-sm font-medium text-[var(--sidebar-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
                   >
-                    Aiden Lei Lopez
+                    {process.env.NEXT_PUBLIC_USER_FULL_NAME || "User"}
                   </span>
                   <span
                     className={`text-xs text-[var(--chat-text-muted)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}

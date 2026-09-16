@@ -30,7 +30,16 @@ vi.mock("@/lib/rateLimit", () => ({
 
 const mockGetGenerativeModel = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/prompt", () => ({
-  getSystemPrompt: vi.fn().mockReturnValue("### JAVIER FIRST PERSON PROMPT"),
+  getSystemPrompt: vi.fn().mockReturnValue("### BOT FIRST PERSON PROMPT"),
+}));
+
+const mockSearchSimilarChats = vi.hoisted(() => vi.fn().mockResolvedValue([]));
+vi.mock("@/lib/rag", () => ({
+  searchSimilarChats: (...args: unknown[]) => mockSearchSimilarChats(...args),
+  formatMemoriesForPrompt: (memories: { summary: string; text: string }[]) =>
+    memories.length > 0
+      ? `### PAST CONVERSATION MEMORIES (FROM TELEGRAM)\n${memories.map((m) => m.summary).join("\n")}`
+      : "",
 }));
 
 // Mock Google Generative AI - use class for constructor
@@ -51,7 +60,7 @@ describe("POST /api/chat", () => {
 
     const mockStream = {
       [Symbol.asyncIterator]: async function* () {
-        yield { text: () => "Hi Aiden, love you too!" };
+        yield { text: () => "Hi User, love you too!" };
       },
     };
 
@@ -173,7 +182,7 @@ describe("POST /api/chat", () => {
     expect(mockGetGenerativeModel).toHaveBeenCalledWith(
       expect.objectContaining({
         systemInstruction: expect.stringContaining(
-          "### JAVIER FIRST PERSON PROMPT",
+          "### BOT FIRST PERSON PROMPT",
         ),
       }),
     );
@@ -183,7 +192,7 @@ describe("POST /api/chat", () => {
     const request = new NextRequest("http://localhost/api/chat", {
       method: "POST",
       body: JSON.stringify({
-        messages: [{ role: "user", content: "I love you and miss you Javier" }],
+        messages: [{ role: "user", content: "I love you and miss you Bot" }],
       }),
     });
 
@@ -193,9 +202,38 @@ describe("POST /api/chat", () => {
     expect(mockGetGenerativeModel).toHaveBeenCalledWith(
       expect.objectContaining({
         systemInstruction: expect.stringContaining(
-          "### JAVIER FIRST PERSON PROMPT",
+          "### BOT FIRST PERSON PROMPT",
         ),
       }),
+    );
+  });
+
+  it("injects RAG memories into system instruction when relevant chats are found", async () => {
+    mockSearchSimilarChats.mockResolvedValueOnce([
+      {
+        chunkId: "chunk-1",
+        summary: "Bot and User eating ramen together in Tanjong Pagar",
+        text: "[Bot] Ramen tonight?",
+        startDate: new Date("2024-05-14"),
+        endDate: new Date("2024-05-14"),
+      },
+    ]);
+
+    const request = new NextRequest("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [
+          { role: "user", content: "Remember where we had ramen last time?" },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+
+    expect(mockSearchSimilarChats).toHaveBeenCalledWith(
+      "Remember where we had ramen last time?",
+      4,
     );
   });
 });

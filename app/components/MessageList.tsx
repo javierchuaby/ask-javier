@@ -52,7 +52,10 @@ export function MessageList({
                   />
                 </div>
               ) : null}
-              <p>Start a conversation with Javier...</p>
+              <p>
+                Start a conversation with{" "}
+                {process.env.NEXT_PUBLIC_BOT_NAME || "Bot"}...
+              </p>
             </div>
           )}
           {messages.map((msg, index) => (
@@ -62,7 +65,7 @@ export function MessageList({
             messages.length > 0 &&
             messages[messages.length - 1]?.content === "" && (
               <p className="text-[var(--chat-text-muted)] animate-pulse">
-                Javier is typing...
+                {process.env.NEXT_PUBLIC_BOT_NAME || "Bot"} is typing...
               </p>
             )}
           <div ref={messagesEndRef} />
