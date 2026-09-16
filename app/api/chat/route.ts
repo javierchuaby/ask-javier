@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse, NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 import { checkRateLimit, recordRequest, RATE_LIMITS } from "@/lib/rateLimit";
 import { getDb } from "@/lib/mongodb";
 import { AI_MODELS } from "@/lib/constants";
@@ -188,13 +188,9 @@ async function generateChatTitle(
 
 export async function POST(request: NextRequest) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

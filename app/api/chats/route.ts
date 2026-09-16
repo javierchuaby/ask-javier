@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
-import { getToken } from "next-auth/jwt";
-import { env } from "@/lib/env";
+import { auth } from "@/auth";
 
 // POST /api/chats - Create a new chat
 export async function POST(request: NextRequest) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -48,13 +43,9 @@ export async function POST(request: NextRequest) {
 // GET /api/chats - Get all chats
 export async function GET(request: NextRequest) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

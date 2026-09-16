@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { getToken } from "next-auth/jwt";
-import { env } from "@/lib/env";
+import { auth } from "@/auth";
 
 // GET /api/chats/[chatId] - Get chat with messages
 export async function GET(
@@ -10,13 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -76,13 +71,9 @@ export async function DELETE(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -123,13 +114,9 @@ export async function PATCH(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   // Check authentication
-  const token = await getToken({
-    req: request,
-    secret: env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
+  const session = await auth();
 
-  if (!token) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -13,11 +13,11 @@ vi.mock("@/lib/mongodb", () => ({
   }),
 }));
 
-const mockGetTokenChat = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ email: "test@example.com" }),
+const mockAuth = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ user: { email: "test@example.com", id: "user-123" } }),
 );
-vi.mock("next-auth/jwt", () => ({
-  getToken: (opts: unknown) => mockGetTokenChat(opts),
+vi.mock("@/auth", () => ({
+  auth: () => mockAuth(),
 }));
 
 const mockCheckRateLimit = vi.fn();
@@ -54,7 +54,7 @@ vi.mock("@google/generative-ai", () => {
 describe("POST /api/chat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetTokenChat.mockResolvedValue({ email: "test@example.com" });
+    mockAuth.mockResolvedValue({ user: { email: "test@example.com", id: "user-123" } });
     mockCheckRateLimit.mockResolvedValue({ allowed: true });
     mockRecordRequest.mockResolvedValue(undefined);
 
@@ -72,7 +72,7 @@ describe("POST /api/chat", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockGetTokenChat.mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest("http://localhost/api/chat", {
       method: "POST",

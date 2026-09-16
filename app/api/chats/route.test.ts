@@ -25,24 +25,24 @@ vi.mock("@/lib/mongodb", () => ({
   getDb: vi.fn().mockResolvedValue(mockDb),
 }));
 
-const mockGetToken = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ email: "test@example.com" }),
+const mockAuth = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ user: { email: "test@example.com", id: "user-123" } }),
 );
-vi.mock("next-auth/jwt", () => ({
-  getToken: (opts: unknown) => mockGetToken(opts),
+vi.mock("@/auth", () => ({
+  auth: () => mockAuth(),
 }));
 
 describe("POST /api/chats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetToken.mockResolvedValue({ email: "test@example.com" });
+    mockAuth.mockResolvedValue({ user: { email: "test@example.com", id: "user-123" } });
     mockInsertOne.mockResolvedValue({
       insertedId: { toString: () => "507f1f77bcf86cd799439011" },
     });
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockGetToken.mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest("http://localhost/api/chats", {
       method: "POST",
@@ -89,7 +89,7 @@ describe("POST /api/chats", () => {
 describe("GET /api/chats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetToken.mockResolvedValue({ email: "test@example.com" });
+    mockAuth.mockResolvedValue({ user: { email: "test@example.com", id: "user-123" } });
     mockToArray.mockResolvedValue([
       {
         _id: { toString: () => "507f1f77bcf86cd799439011" },
@@ -102,7 +102,7 @@ describe("GET /api/chats", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockGetToken.mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest("http://localhost/api/chats", {
       method: "GET",
