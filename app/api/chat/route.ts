@@ -1,5 +1,5 @@
 import { streamText, generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { checkRateLimit, recordRequest, RATE_LIMITS } from "@/lib/rateLimit";
@@ -10,6 +10,8 @@ import { getSystemPrompt } from "@/lib/prompt";
 import { ObjectId } from "mongodb";
 import { searchSimilarChats } from "@/lib/rag";
 import { z } from "zod";
+
+const google = createGoogleGenerativeAI({ apiKey: env.GOOGLE_GENAI_API_KEY });
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

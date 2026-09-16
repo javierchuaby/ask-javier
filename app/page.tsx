@@ -365,11 +365,15 @@ export default function Home() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isSidebarOpen]);
 
-  // Map ai-sdk messages to the format expected by MessageList component
-  const mappedMessages: ChatMessage[] = messages.map(m => ({
-    role: m.role === 'user' ? 'user' : 'bot',
-    content: m.content || ''
-  }));
+  // Map ai-sdk messages to the format expected by MessageList component.
+  // Filter out tool-call intermediates (role='tool') and empty assistant messages
+  // that the AI SDK emits during tool use — they would render as blank bubbles.
+  const mappedMessages: ChatMessage[] = messages
+    .filter(m => m.role === 'user' || (m.role === 'assistant' && m.content.trim() !== ''))
+    .map(m => ({
+      role: m.role === 'user' ? 'user' : 'bot',
+      content: m.content,
+    }));
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)]">
