@@ -36,6 +36,7 @@ async function generateChatTitle(
     );
 
     if (!rateLimitResult.allowed) {
+      console.warn(`[generateChatTitle] Rate limited for chat ${chatId}`);
       return;
     }
 
@@ -48,7 +49,7 @@ async function generateChatTitle(
       prompt: `Generate a short title (3-5 words, max 50 characters) for this query:\n\n${firstMessage}`,
     });
 
-    let cleanTitle = text.replace(/^["']|["']$/g, "").trim();
+    let cleanTitle = text.replace(/^[\"']|[\"']$/g, "").trim();
     if (cleanTitle.length > 50) {
       cleanTitle = cleanTitle.slice(0, 50).trim();
     }
@@ -58,6 +59,7 @@ async function generateChatTitle(
         { _id: objectId },
         { $set: { title: cleanTitle } },
       );
+      console.log(`[generateChatTitle] Title set for chat ${chatId}: "${cleanTitle}"`);
     }
   } catch (error) {
     console.error(
@@ -76,6 +78,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const { messages, chatId } = await request.json();
+
+    console.log(`[POST /api/chat] Request received — chatId: ${chatId ?? "new"}, messages: ${messages?.length ?? 0}`);
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (error) {
-        console.error("Failed to save user message:", error);
+        console.error("[POST /api/chat] Failed to save user message:", error);
       }
     }
 
@@ -159,6 +163,7 @@ export async function POST(request: NextRequest) {
 
     if (!rateLimitResult.allowed) {
       const retryAfter = rateLimitResult.retryAfter || 60;
+      console.warn(`[POST /api/chat] Rate limited — retryAfter: ${retryAfter}s`);
       return NextResponse.json(
         {
           error: "Rate limit exceeded",
@@ -201,6 +206,8 @@ export async function POST(request: NextRequest) {
       content: m.content
     }));
 
+    console.log(`[POST /api/chat] Calling ${modelName} with ${sdkMessages.length} messages`);
+
     const result = await streamText({
       model: google(modelName),
       messages: sdkMessages,
@@ -213,8 +220,15 @@ export async function POST(request: NextRequest) {
             query: z.string().describe("A fully resolved search query combining current intent and past context."),
           }),
           execute: async ({ query }: { query: string }) => {
+            console.log(`[search_memories] Searching for: "${query}"`);
             try {
               const results = await searchSimilarChats(query, 4);
+              console.log(`[search_memories] Found ${results.length} result(s) for: "${query}"`);
+
+              if (results.length === 0) {
+                return "No memories found for this query.";
+              }
+
               return results.map(r => {
                 const dateStr = r.startDate
                   ? new Date(r.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
@@ -222,13 +236,26 @@ export async function POST(request: NextRequest) {
                 return `[${dateStr}]\n${(r.dialogueText ?? "").trim()}`;
               });
             } catch (error) {
-              console.error("Error searching chats:", error);
-              return ["Search failed"];
+              console.error(`[search_memories] Error searching for "${query}":`, error);
+              return "Search failed. Please try again.";
             }
           },
         },
       },
-      async onFinish({ text }) {
+      onStepFinish({ stepType, finishReason, usage, toolCalls, toolResults }) {
+        console.log(
+          `[POST /api/chat] Step finished — type: ${stepType}, finishReason: ${finishReason}, ` +
+          `tokens: ${usage?.promptTokens ?? "?"}p/${usage?.completionTokens ?? "?"}c, ` +
+          `toolCalls: ${toolCalls?.length ?? 0}, toolResults: ${toolResults?.length ?? 0}`
+        );
+      },
+      async onFinish({ text, finishReason, usage }) {
+        console.log(
+          `[POST /api/chat] Stream finished — finishReason: ${finishReason}, ` +
+          `textLength: ${text.trim().length}, ` +
+          `tokens: ${usage?.promptTokens ?? "?"}p/${usage?.completionTokens ?? "?"}c`
+        );
+
         if (chatId && ObjectId.isValid(chatId) && text.trim().length > 0) {
           try {
             const db = await getDb();
@@ -259,9 +286,13 @@ export async function POST(request: NextRequest) {
                 },
               },
             );
+
+            console.log(`[POST /api/chat] AI message saved to DB for chat ${chatId}`);
           } catch (error) {
-            console.error("Failed to save AI message:", error);
+            console.error("[POST /api/chat] Failed to save AI message:", error);
           }
+        } else if (text.trim().length === 0) {
+          console.warn(`[POST /api/chat] Empty response text — not saving to DB. finishReason: ${finishReason}`);
         }
       },
     });
@@ -270,6 +301,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
     const msg = e.message;
+    console.error("[POST /api/chat] Unhandled error:", e);
     const isGeminiQuota =
       msg.includes("429") ||
       msg.includes("Quota exceeded") ||
