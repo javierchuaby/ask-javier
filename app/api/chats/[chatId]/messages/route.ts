@@ -13,6 +13,7 @@ export async function POST(
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {

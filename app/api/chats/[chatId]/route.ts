@@ -13,6 +13,7 @@ export async function GET(
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {
@@ -47,7 +48,7 @@ export async function GET(
 
     const messagesWithId = messages.map((msg) => ({
       _id: msg._id.toString(),
-      role: msg.role,
+      role: msg.role === "aiden" || msg.role === "javier" ? "bot" : msg.role,
       content: msg.content,
       index: msg.index,
       createdAt: msg.createdAt,
@@ -78,6 +79,7 @@ export async function DELETE(
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {
@@ -124,6 +126,7 @@ export async function PATCH(
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {

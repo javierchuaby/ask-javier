@@ -28,10 +28,28 @@ async function main() {
   const dryRun = args.includes("--dry-run");
 
   const limitIdx = args.indexOf("--limit");
-  const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : null;
+  let limit: number | null = null;
+  if (limitIdx !== -1) {
+    limit = parseInt(args[limitIdx + 1], 10);
+    if (isNaN(limit) || limit <= 0) {
+      console.error(
+        "❌ Invalid value for --limit. Must be a positive integer.",
+      );
+      process.exit(1);
+    }
+  }
 
   const concIdx = args.indexOf("--concurrency");
-  const concurrency = concIdx !== -1 ? parseInt(args[concIdx + 1], 10) : 4;
+  let concurrency = 4;
+  if (concIdx !== -1) {
+    concurrency = parseInt(args[concIdx + 1], 10);
+    if (isNaN(concurrency) || concurrency <= 0) {
+      console.error(
+        "❌ Invalid value for --concurrency. Must be a positive integer.",
+      );
+      process.exit(1);
+    }
+  }
 
   const chatIdx = args.indexOf("--chat");
   const targetChat =
@@ -147,6 +165,16 @@ async function main() {
   console.log(
     `• Found ${existingSet.size} previously ingested chunks in MongoDB.`,
   );
+
+  const allChunkIds = new Set(allChunks.map((c) => c.chunkId));
+  const chunksToDelete = existingIds.filter((id) => !allChunkIds.has(id));
+
+  if (chunksToDelete.length > 0) {
+    console.log(
+      `• Removing ${chunksToDelete.length} stale chunks from MongoDB...`,
+    );
+    await collection.deleteMany({ chunkId: { $in: chunksToDelete } });
+  }
 
   let pendingChunks = allChunks.filter((c) => !existingSet.has(c.chunkId));
   console.log(`• Pending new chunks to ingest: ${pendingChunks.length}`);

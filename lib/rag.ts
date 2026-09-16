@@ -145,7 +145,7 @@ export async function searchSimilarChats(
           dialogueText: { $ifNull: ["$dialogueText", "$text"] },
           startDate: 1,
           endDate: 1,
-          score: { $meta: "searchScore" },
+          score: { $meta: "score" },
         },
       },
     ];
