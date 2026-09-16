@@ -67,12 +67,12 @@ export function TopBar({
             <h1
               className={`text-xl font-bold text-[var(--chat-text)] ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
             >
-              Ask Javier
+              Ask {process.env.NEXT_PUBLIC_BOT_NAME || "Bot"}
             </h1>
             <p
               className={`text-xs text-[var(--chat-text-muted)] italic ${isValentine ? "font-[family-name:var(--font-itim)]" : ""}`}
             >
-              For Aiden Lei Lopez
+              For {process.env.NEXT_PUBLIC_USER_FULL_NAME || "User"}
             </p>
           </div>
 

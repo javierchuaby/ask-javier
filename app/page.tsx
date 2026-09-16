@@ -193,7 +193,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         const formattedMessages: ChatMessage[] = data.messages.map(
-          (msg: { role: "aiden" | "javier"; content: string }) => ({
+          (msg: { role: "user" | "bot"; content: string }) => ({
             role: msg.role,
             content: msg.content,
           }),
@@ -260,7 +260,7 @@ export default function Home() {
     }
   };
 
-  const handleAskJavier = async () => {
+  const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
     // Add length validation on frontend
@@ -302,11 +302,11 @@ export default function Home() {
       isFirstMessage = currentChat ? currentChat.messageCount === 0 : false;
     }
 
-    const userMsg: ChatMessage = { role: "aiden", content: input };
+    const userMsg: ChatMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMsg];
 
     // Create streaming message immediately
-    const streamingMsg: ChatMessage = { role: "javier", content: "" };
+    const streamingMsg: ChatMessage = { role: "bot", content: "" };
 
     // Add both user message and empty streaming message
     setMessages([...updatedMessages, streamingMsg]);
@@ -498,7 +498,7 @@ export default function Home() {
           isLoading={isLoading}
           textareaRef={textareaRef}
           onInputChange={setInput}
-          onSubmit={handleAskJavier}
+          onSubmit={handleSendMessage}
           rateLimitRetryIn={rateLimitRetryIn}
           onRetry={() => setRateLimitRetryIn(null)}
         />

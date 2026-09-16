@@ -26,7 +26,7 @@ function SignInContent() {
       <div className="bg-white dark:bg-[#212121] border border-gray-200 dark:border-[#303030] rounded-3xl p-10 shadow-xl shadow-black/10 dark:shadow-xl dark:shadow-black/20">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-[#ffffff] mb-3">
-            Welcome back, Aiden!
+            Welcome back, {process.env.NEXT_PUBLIC_USER_NAME || "User"}!
           </h1>
           <p className="text-base text-gray-600 dark:text-[#ffffff]/70">
             Sign in with your Google account to continue

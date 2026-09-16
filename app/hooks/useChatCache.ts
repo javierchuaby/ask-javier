@@ -1,7 +1,7 @@
 import { useRef, useCallback } from "react";
 
 interface ChatMessage {
-  role: "aiden" | "javier";
+  role: "user" | "bot";
   content: string;
 }
 

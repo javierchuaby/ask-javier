@@ -23,18 +23,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div
-      className={`flex ${message.role === "aiden" ? "justify-end" : "justify-start"} ${message.role === "javier" ? "w-full" : ""}`}
+      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} ${message.role === "bot" ? "w-full" : ""}`}
       style={{
         animation: `fadeIn 0.2s ease-out forwards`,
         opacity: 0,
       }}
     >
       <div
-        className={`message-bubble ${message.role === "aiden" ? "max-w-[var(--message-max-width)]" : "w-[800px] !max-w-none"} ${
-          message.role === "aiden" ? userBubbleClass : aiBubbleClass
+        className={`message-bubble ${message.role === "user" ? "max-w-[var(--message-max-width)]" : "w-[800px] !max-w-none"} ${
+          message.role === "user" ? userBubbleClass : aiBubbleClass
         }`}
       >
-        {message.role === "javier" ? (
+        {message.role === "bot" ? (
           <ReactMarkdown components={markdownComponents}>
             {message.content}
           </ReactMarkdown>

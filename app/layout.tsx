@@ -20,8 +20,8 @@ const itim = Itim({
 });
 
 export const metadata: Metadata = {
-  title: "Ask Javier",
-  description: "AI chat assistant for Aiden",
+  title: `Ask ${process.env.NEXT_PUBLIC_BOT_NAME || "Bot"}`,
+  description: `AI chat assistant for ${process.env.NEXT_PUBLIC_USER_NAME || "User"}`,
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",

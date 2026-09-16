@@ -4,12 +4,6 @@ import { ObjectId } from "mongodb";
 import { getToken } from "next-auth/jwt";
 import { env } from "@/lib/env";
 
-// Determine cookie name based on environment (matches NextAuth config)
-const isProduction = env.NODE_ENV === "production";
-const cookieName = isProduction
-  ? "__Secure-next-auth.session-token"
-  : "next-auth.session-token";
-
 // POST /api/chats/[chatId]/messages - Add a message to a chat
 export async function POST(
   request: NextRequest,
@@ -19,7 +13,7 @@ export async function POST(
   const token = await getToken({
     req: request,
     secret: env.NEXTAUTH_SECRET,
-    cookieName: cookieName,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   if (!token) {
@@ -41,7 +35,7 @@ export async function POST(
       );
     }
 
-    if (role !== "aiden" && role !== "javier") {
+    if (role !== "user" && role !== "bot") {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
@@ -84,7 +78,7 @@ export async function POST(
     );
 
     // Update chat title if this is the first message and title is "New Chat"
-    if (messageCount === 0 && chat.title === "New Chat" && role === "aiden") {
+    if (messageCount === 0 && chat.title === "New Chat" && role === "user") {
       const tempTitle = content.slice(0, 50).trim();
       await chatsCollection.updateOne(
         { _id: objectId },

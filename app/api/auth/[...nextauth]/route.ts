@@ -8,9 +8,6 @@ const ALLOWED_EMAILS = env.ALLOWED_EMAILS.split(",")
   .map((email) => email.trim().toLowerCase())
   .filter((email) => email.length > 0);
 
-// Determine if we are in production
-const isProduction = env.NODE_ENV === "production";
-
 const authOptions: NextAuthConfig = {
   providers: [
     GoogleProvider({
@@ -19,23 +16,7 @@ const authOptions: NextAuthConfig = {
     }),
   ],
   trustHost: true,
-  cookies: {
-    sessionToken: {
-      name: isProduction
-        ? "__Secure-next-auth.session-token"
-        : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: isProduction,
-        // Note: Cookies are domain-specific by design for security
-        // Preview deployments (e.g., ask-javier-abc123.vercel.app) are separate domains
-        // Users will need to sign in separately on each preview URL, which is expected behavior
-        // The trustHost: true setting above handles dynamic host detection properly
-      },
-    },
-  },
+
   callbacks: {
     async signIn({ user, account: _account, profile: _profile }) {
       // Check if user's email is in the whitelist
