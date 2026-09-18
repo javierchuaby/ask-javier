@@ -1,4 +1,4 @@
 export const AI_MODELS = {
-  TITLE: "gemini-2.5-flash",
-  CHAT: "gemini-3.5-flash-lite",
+  TITLE: "gemini-1.5-flash",
+  CHAT: "gemini-2.5-flash",
 } as const;
